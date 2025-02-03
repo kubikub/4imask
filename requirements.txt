@@ -1,0 +1,8 @@
+pyside6
+pyqtdarktheme
+#pyqtdarktheme==2.1.0 --ignore-requires-python # pour python3.12
+#pyyaml
+opencv-python
+opencv-python-headless
+onnxruntime-directml
+skimage
