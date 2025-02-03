@@ -3,7 +3,8 @@ import cv2
 import time
 import subprocess
 import tempfile
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QProgressBar, QComboBox, QMessageBox
+from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
+                                QHBoxLayout, QVBoxLayout, QWidget, QLabel, QProgressBar, QComboBox, QMessageBox)
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtCore import QTimer, QThread, Signal
 import numpy as np
@@ -25,6 +26,8 @@ class AnonymizationWorker(QThread):
         self.video_path = video_path
         # self.net = net
         self.output_format = output_format
+        self._is_paused = False
+        self._is_stopped = False
 
     def run(self):
         cap = cv2.VideoCapture(self.video_path)
@@ -45,11 +48,16 @@ class AnonymizationWorker(QThread):
             QMessageBox.critical(self, "Error", "Failed to open video writer.")
             cap.release()
             return
-        centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')
+        centerface = CenterFace(in_shape=(new_width, new_height), backend='onnxrt',  override_execution_provider='CUDAExecutionProvider') #auto
         # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
         frame_count = 0
         while cap.isOpened():
+            if self._is_stopped:
+                break
+            if self._is_paused:
+                time.sleep(0.1)
+                continue
             ret, frame = cap.read()
             if not ret:
                 break
@@ -70,7 +78,7 @@ class AnonymizationWorker(QThread):
             # self.net.setInputSize([w, h])
             # detections = self.net.infer(frame)
             
-            detections, _ = centerface(frame, threshold=0.3)
+            detections, _ = centerface(frame, threshold=0.4)
 
             # loop over the detections
             # for i in range(0, detections.shape[2]):
@@ -117,6 +125,15 @@ class AnonymizationWorker(QThread):
         cv2.destroyAllWindows()
         self.anonymization_complete.emit()
 
+    def pause(self):
+        self._is_paused = True
+
+    def resume(self):
+        self._is_paused = False
+
+    def stop(self):
+        self._is_stopped = True
+
     def get_dimensions(self, format):
 
         if format == "480p":
@@ -125,8 +142,8 @@ class AnonymizationWorker(QThread):
             return 1280, 720
         elif format == "1080p":
             return 1920, 1080
-        elif format == "320p":
-            return 320, 240
+        elif format == "360p":
+            return 640,360
         else:
             return 640, 480
 
@@ -285,12 +302,27 @@ class VideoAnonymizer(QMainWindow):
         self.layout.addWidget(self.format_label)
 
         self.format_combo = QComboBox()
-        self.format_combo.addItems(["480p", "720p", "1080p"])
+        self.format_combo.addItems(["360p", "480p", "720p", "1080p"])
         self.layout.addWidget(self.format_combo)
 
+        self.buttons_layout = QHBoxLayout()
+        
         self.start_button = QPushButton("Start Anonymization")
         self.start_button.clicked.connect(self.start_anonymization)
-        self.layout.addWidget(self.start_button)
+        self.buttons_layout.addWidget(self.start_button)
+
+        self.pause_button = QPushButton("Pause")
+        self.pause_button.clicked.connect(self.pause_anonymization)
+        self.buttons_layout.addWidget(self.pause_button)
+
+        self.resume_button = QPushButton("Resume")
+        self.resume_button.clicked.connect(self.resume_anonymization)
+        self.buttons_layout.addWidget(self.resume_button)
+
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self.stop_anonymization)
+        self.buttons_layout.addWidget(self.stop_button)
+        self.layout.addLayout(self.buttons_layout)
 
         self.progress_bar = QProgressBar()
         self.layout.addWidget(self.progress_bar)
@@ -314,6 +346,9 @@ class VideoAnonymizer(QMainWindow):
         self.pause_updates = False
 
     def select_video(self):
+        if hasattr(self, 'worker') and self.worker.isRunning():
+            QMessageBox.warning(self, "Warning", "Anonymization is in progress. Please stop it first.")
+            return
         options = QFileDialog.Options()
         self.video_path, _ = QFileDialog.getOpenFileName(self, "Select Video", "", "Video Files (*.mp4 *.avi *.mov)", options=options)
         if self.video_path:
@@ -336,8 +371,32 @@ class VideoAnonymizer(QMainWindow):
             self.worker.anonymization_complete.connect(self.anonymization_complete)
             self.worker.frame_emited.connect(self.update_frame)
             self.worker.start()
+            self.select_button.setEnabled(False)
+            self.pause_button.setEnabled(True)
+            self.resume_button.setEnabled(False)
+            self.stop_button.setEnabled(True)
         else:
             QMessageBox.warning(self, "Warning", "Please select a video first.")
+
+    def pause_anonymization(self):
+        if hasattr(self, 'worker'):
+            self.worker.pause()
+            self.pause_button.setEnabled(False)
+            self.resume_button.setEnabled(True)
+
+    def resume_anonymization(self):
+        if hasattr(self, 'worker'):
+            self.worker.resume()
+            self.pause_button.setEnabled(True)
+            self.resume_button.setEnabled(False)
+
+    def stop_anonymization(self):
+        if hasattr(self, 'worker'):
+            self.worker.stop()
+            self.select_button.setEnabled(True)
+            self.pause_button.setEnabled(False)
+            self.resume_button.setEnabled(False)
+            self.stop_button.setEnabled(False)
 
     def get_ffmpeg_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
@@ -381,6 +440,10 @@ class VideoAnonymizer(QMainWindow):
 
     def anonymization_complete(self):
         self.notification_label.setText("Anonymization complete.")
+        self.select_button.setEnabled(True)
+        self.pause_button.setEnabled(False)
+        self.resume_button.setEnabled(False)
+        self.stop_button.setEnabled(False)
 
     def update_frame(self, frame):
         if self.pause_updates:
