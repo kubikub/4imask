@@ -41,7 +41,7 @@ class AnonymizationWorker(QThread):
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_width, new_height = self.get_dimensions(self.output_format)
-
+        print(self.output_format)
         fourcc = cv2.VideoWriter_fourcc(*'X264')
         output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
         print(output_name)
@@ -300,6 +300,11 @@ class VideoAnonymizer(QMainWindow):
         self.stop_button = QPushButton("Stop")
         self.stop_button.clicked.connect(self.stop_anonymization)
         self.buttons_layout.addWidget(self.stop_button)
+
+        self.play_button = QPushButton("Play Preview")
+        self.play_button.clicked.connect(self.play_anonymization)
+        self.buttons_layout.addWidget(self.play_button)
+
         self.layout.addLayout(self.buttons_layout)
 
         self.progress_bar = QProgressBar()
@@ -308,6 +313,7 @@ class VideoAnonymizer(QMainWindow):
         self.time_label = QLabel("Estimated Time Remaining: --")
         self.layout.addWidget(self.time_label)
 
+        # self.layout.addWidget(self.play_button)
         self.notification_label = QLabel("")
         self.layout.addWidget(self.notification_label)
 
@@ -359,6 +365,7 @@ class VideoAnonymizer(QMainWindow):
             self.blur_checkbox.setEnabled(False)
             self.mask_checkbox.setEnabled(False)
             self.mosaic_checkbox.setEnabled(False)
+            self.play_button.setEnabled(False)
 
         else:
             QMessageBox.warning(self, "Warning", "Please select a video first.")
@@ -408,6 +415,7 @@ class VideoAnonymizer(QMainWindow):
             self.blur_checkbox.setEnabled(True)
             self.mask_checkbox.setEnabled(True)
             self.mosaic_checkbox.setEnabled(True)
+            self.play_button.setEnabled(True)
 
     def get_ffmpeg_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
@@ -430,6 +438,7 @@ class VideoAnonymizer(QMainWindow):
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
         self.stop_button.setEnabled(False)
+        self.play_button.setEnabled(True)
 
     def update_frame(self, frame):
         if self.pause_updates:
@@ -451,6 +460,13 @@ class VideoAnonymizer(QMainWindow):
         convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
         p = convert_to_Qt_format.scaled(720, 480)
         self.original_label.setPixmap(QPixmap.fromImage(p))
+
+    def play_anonymization(self):
+        if hasattr(self, 'worker') and self.worker.isRunning():
+            self.timer.timeout.connect(self.update_frame)
+            self.timer.start(30)
+        else:
+            QMessageBox.warning(self, "Warning", "Anonymization is not in progress. Please start the anonymization first.")
 
     def closeEvent(self, event):
         self.ffmpeg_env.remove_ffmpeg_env_path()
