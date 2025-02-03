@@ -328,7 +328,7 @@ class VideoAnonymizer(QMainWindow):
         self.video_path = None
         self.cap = None
         self.timer = QTimer()
-        self.timer.timeout.connect(self.update_frame_from_timer)
+        # self.timer.timeout.connect(self.update_frame)
         self.pause_updates = False
 
     def select_video(self):
@@ -443,6 +443,19 @@ class VideoAnonymizer(QMainWindow):
         self.play_button.setEnabled(False)
 
     def update_frame(self, frame):
+        if self.pause_updates:
+            if not hasattr(self, 'paused_frame_displayed') or not self.paused_frame_displayed:
+                rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                h, w, ch = rgb_image.shape
+                bytes_per_line = ch * w
+                convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                p = convert_to_Qt_format.scaled(720, 480)
+                self.original_label.setPixmap(QPixmap.fromImage(p))
+                self.paused_frame_displayed = True
+            return
+
+        # Reset the flag when updates are not paused
+        self.paused_frame_displayed = False
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
@@ -450,14 +463,9 @@ class VideoAnonymizer(QMainWindow):
         p = convert_to_Qt_format.scaled(720, 480)
         self.original_label.setPixmap(QPixmap.fromImage(p))
 
-    def update_frame_from_timer(self):
-        if hasattr(self, 'worker') and self.worker.isRunning():
-            ret, frame = self.cap.read()
-            if ret:
-                self.update_frame(frame)
-
     def play_anonymization(self):
         if hasattr(self, 'worker') and self.worker.isRunning():
+            self.timer.timeout.connect(self.update_frame)
             self.timer.start(30)
         else:
             QMessageBox.warning(self, "Warning", "Anonymization is not in progress. Please start the anonymization first.")
