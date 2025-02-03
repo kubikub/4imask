@@ -4,5 +4,7 @@ pyqtdarktheme
 #pyyaml
 opencv-python
 opencv-python-headless
+onnx
 onnxruntime-directml
+onnxruntime-openvino
 scikit-image

@@ -38,14 +38,14 @@ class AnonymizationWorker(QThread):
         new_width, new_height = self.get_dimensions(self.output_format)
 
         fourcc = cv2.VideoWriter_fourcc(*'X264')
-        out = cv2.VideoWriter('anonymized_video.mp4', fourcc, fps, (new_width, new_height))
+        out = cv2.VideoWriter('anonymized_video.mkv', fourcc, fps, (new_width, new_height))
         # out = cv2.VideoWriter('/home/frank-kubler/anonymized_video2.avi', fourcc, fps)
         if not out.isOpened():
             QMessageBox.critical(self, "Error", "Failed to open video writer.")
             cap.release()
             return
         centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')
-        centerface.backend = 'onnxruntime-directml'
+        # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
         frame_count = 0
         while cap.isOpened():
@@ -264,6 +264,7 @@ class VideoAnonymizer(QMainWindow):
         super().__init__()
         
         self.ffmpeg_path = self.get_ffmpeg_path()
+        print(self.ffmpeg_path)
         self.set_ffmpeg_env_path()
         print(self.is_ffmpeg_path_in_env())
 
@@ -284,7 +285,7 @@ class VideoAnonymizer(QMainWindow):
         self.layout.addWidget(self.format_label)
 
         self.format_combo = QComboBox()
-        self.format_combo.addItems(["320p", "480p", "720p", "1080p"])
+        self.format_combo.addItems(["480p", "720p", "1080p"])
         self.layout.addWidget(self.format_combo)
 
         self.start_button = QPushButton("Start Anonymization")
@@ -343,6 +344,7 @@ class VideoAnonymizer(QMainWindow):
 
     def set_ffmpeg_env_path(self):
         os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+        print(f"Updated PATH: {os.environ['PATH']}")
 
     def remove_ffmpeg_env_path(self):
         # ffmpeg_path = r"C:\Program Files\ffmpeg\bin"
@@ -382,9 +384,18 @@ class VideoAnonymizer(QMainWindow):
 
     def update_frame(self, frame):
         if self.pause_updates:
+            if not hasattr(self, 'paused_frame_displayed') or not self.paused_frame_displayed:
+                rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                h, w, ch = rgb_image.shape
+                bytes_per_line = ch * w
+                convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                p = convert_to_Qt_format.scaled(720, 480)
+                self.original_label.setPixmap(QPixmap.fromImage(p))
+                self.paused_frame_displayed = True
             return
-        # ret, frame = self.cap.read()
-        # if ret:
+        
+        # Reset the flag when updates are not paused
+        self.paused_frame_displayed = False
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
