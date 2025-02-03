@@ -367,7 +367,7 @@ class VideoAnonymizer(QMainWindow):
             self.blur_checkbox.setEnabled(False)
             self.mask_checkbox.setEnabled(False)
             self.mosaic_checkbox.setEnabled(False)
-            self.play_button.setEnabled(False)
+            self.play_button.setEnabled(True)
 
         else:
             QMessageBox.warning(self, "Warning", "Please select a video first.")
@@ -417,7 +417,7 @@ class VideoAnonymizer(QMainWindow):
             self.blur_checkbox.setEnabled(True)
             self.mask_checkbox.setEnabled(True)
             self.mosaic_checkbox.setEnabled(True)
-            self.play_button.setEnabled(True)
+            self.play_button.setEnabled(False)
 
     def get_ffmpeg_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
@@ -440,7 +440,7 @@ class VideoAnonymizer(QMainWindow):
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
         self.stop_button.setEnabled(False)
-        self.play_button.setEnabled(True)
+        self.play_button.setEnabled(False)
 
     def update_frame(self, frame):
         if self.pause_updates:
