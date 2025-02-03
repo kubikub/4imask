@@ -43,7 +43,8 @@ class AnonymizationWorker(QThread):
         new_width, new_height = self.get_dimensions(self.output_format)
 
         fourcc = cv2.VideoWriter_fourcc(*'X264')
-        out = cv2.VideoWriter('anonymized_video.mkv', fourcc, fps, (new_width, new_height))
+        output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + "mkv"
+        out = cv2.VideoWriter(output_name, fourcc, fps, (new_width, new_height))
         # out = cv2.VideoWriter('/home/frank-kubler/anonymized_video2.avi', fourcc, fps)
         if not out.isOpened():
             QMessageBox.critical(self, "Error", "Failed to open video writer.")
