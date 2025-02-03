@@ -4,7 +4,7 @@ import time
 import subprocess
 import tempfile
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
-                                QHBoxLayout, QVBoxLayout, QWidget, QLabel, QProgressBar, QComboBox, QMessageBox)
+                                QHBoxLayout, QVBoxLayout, QWidget, QLabel, QProgressBar, QComboBox, QMessageBox, QCheckBox)
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtCore import QTimer, QThread, Signal
 import numpy as np
@@ -28,6 +28,7 @@ class AnonymizationWorker(QThread):
         self.output_format = output_format
         self._is_paused = False
         self._is_stopped = False
+        self.replacewith = 'mosaic'  # Default value
 
     def run(self):
         cap = cv2.VideoCapture(self.video_path)
@@ -48,7 +49,7 @@ class AnonymizationWorker(QThread):
             QMessageBox.critical(self, "Error", "Failed to open video writer.")
             cap.release()
             return
-        centerface = CenterFace(in_shape=(new_width, new_height), backend='auto') #auto
+        centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')  # auto
         # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
         frame_count = 0
@@ -62,46 +63,8 @@ class AnonymizationWorker(QThread):
             if not ret:
                 break
             frame = imutils.resize(frame, width=new_width)
-            # frame = imutils.resize(frame, width=400)
-
-            # grab the dimensions of the frame and then construct a blob
-            # from it
-            # (h, w) = frame.shape[:2]
-            # blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300),
-            #     (104.0, 177.0, 123.0))
-
-            # pass the blob through the network and obtain the face detections
-            # self.net.setInput(blob)
-            # detections = self.net.forward()
-                    # Inference
-            #YUNET
-            # self.net.setInputSize([w, h])
-            # detections = self.net.infer(frame)
-            
             detections, _ = centerface(frame, threshold=0.4)
-
-            # loop over the detections
-            # for i in range(0, detections.shape[2]):
-            #     # extract the confidence (i.e., probability) associated with
-            #     # the detection
-            #     confidence = detections[0, 0, i, 2]
-
-            #     # filter out weak detections by ensuring the confidence is
-            #     # greater than the minimum confidence
-            #     if confidence > 0.5:
-            #         # compute the (x, y)-coordinates of the bounding box for
-            #         # the object
-            #         box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-            #         (startX, startY, endX, endY) = box.astype("int")
-
-            #         # extract the face ROI
-            #         face = frame[startY:endY, startX:endX]
-            #         face = self.anonymize_face_pixelate(face, blocks=20)
-
-            #         # store the blurred face in the output image
-            #         frame[startY:endY, startX:endX] = face
-            # frame = self.visualize(frame, detections)
-            self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith='mosaic', ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
+            self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
             out.write(frame)
             frame_count += 1
             # Debugging information
@@ -143,7 +106,7 @@ class AnonymizationWorker(QThread):
         elif format == "1080p":
             return 1920, 1080
         elif format == "360p":
-            return 640,360
+            return 640, 360
         else:
             return 640, 480
 
@@ -201,7 +164,7 @@ class AnonymizationWorker(QThread):
         x2 += w * s
         return np.round([x1, y1, x2, y2]).astype(int)
 
-    def draw_det(self, 
+    def draw_det(self,
                  frame, score, det_idx, x1, y1, x2, y2,
                  replacewith: str = 'blur',
                  ellipse: bool = True,
@@ -213,7 +176,7 @@ class AnonymizationWorker(QThread):
             cv2.rectangle(frame, (x1, y1), (x2, y2), ovcolor, -1)
         elif replacewith == 'blur':
             bf = 2  # blur factor (number of pixels in each dimension that the face will be reduced to)
-            blurred_box =  cv2.blur(
+            blurred_box = cv2.blur(
                 frame[y1:y2, x1:x2],
                 (abs(x2 - x1) // bf, abs(y2 - y1) // bf)
             )
@@ -246,8 +209,6 @@ class AnonymizationWorker(QThread):
                 frame, f'{score:.2f}', (x1 + 0, y1 - 20),
                 cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0)
             )
-
-
 
     def anonymize_face_pixelate(self, image, blocks=3):
         # divide the input image into NxN blocks
@@ -296,7 +257,9 @@ class VideoAnonymizer(QMainWindow):
 
         self.select_button = QPushButton("Select Video")
         self.select_button.clicked.connect(self.select_video)
+        self.video_label = QLabel("No video selected.")
         self.layout.addWidget(self.select_button)
+        self.layout.addWidget(self.video_label)
 
         self.format_label = QLabel("Select Output Format:")
         self.layout.addWidget(self.format_label)
@@ -304,6 +267,18 @@ class VideoAnonymizer(QMainWindow):
         self.format_combo = QComboBox()
         self.format_combo.addItems(["360p", "480p", "720p", "1080p"])
         self.layout.addWidget(self.format_combo)
+
+        self.anonymization_options_layout = QHBoxLayout()
+        self.mosaic_checkbox = QCheckBox("Mosaic")
+        self.blur_checkbox = QCheckBox("Blur")
+        self.mask_checkbox = QCheckBox("Mask")
+        self.mosaic_checkbox.toggled.connect(self.update_checkboxes)
+        self.blur_checkbox.toggled.connect(self.update_checkboxes)
+        self.mask_checkbox.toggled.connect(self.update_checkboxes)
+        self.anonymization_options_layout.addWidget(self.mosaic_checkbox)
+        self.anonymization_options_layout.addWidget(self.blur_checkbox)
+        self.anonymization_options_layout.addWidget(self.mask_checkbox)
+        self.layout.addLayout(self.anonymization_options_layout)
 
         self.buttons_layout = QHBoxLayout()
         
@@ -350,7 +325,8 @@ class VideoAnonymizer(QMainWindow):
             QMessageBox.warning(self, "Warning", "Anonymization is in progress. Please stop it first.")
             return
         options = QFileDialog.Options()
-        self.video_path, _ = QFileDialog.getOpenFileName(self, "Select Video", "", "Video Files (*.mp4 *.avi *.mov)", options=options)
+        self.video_path, _ = QFileDialog.getOpenFileName(self, "Select Video", "", "Video Files (*.mp4 *.avi *.mov *.mkv)", options=options)
+        self.video_label.setText(os.path.basename(self.video_path))
         if self.video_path:
             self.cap = cv2.VideoCapture(self.video_path)
             self.timer.start(30)
@@ -365,7 +341,9 @@ class VideoAnonymizer(QMainWindow):
         if self.video_path:
             self.pause_updates = True
             output_format = self.format_combo.currentText()
+            replacewith = self.get_replacewith_option()
             self.worker = AnonymizationWorker(self.video_path, output_format)
+            self.worker.replacewith = replacewith
             self.worker.progress_updated.connect(self.update_progress)
             self.worker.time_remaining_updated.connect(self.update_time)
             self.worker.anonymization_complete.connect(self.anonymization_complete)
@@ -377,6 +355,29 @@ class VideoAnonymizer(QMainWindow):
             self.stop_button.setEnabled(True)
         else:
             QMessageBox.warning(self, "Warning", "Please select a video first.")
+
+    def update_checkboxes(self, checked):
+        if checked:
+            sender = self.sender()
+            if sender == self.mosaic_checkbox:
+                self.blur_checkbox.setChecked(False)
+                self.mask_checkbox.setChecked(False)
+            elif sender == self.blur_checkbox:
+                self.mosaic_checkbox.setChecked(False)
+                self.mask_checkbox.setChecked(False)
+            elif sender == self.mask_checkbox:
+                self.mosaic_checkbox.setChecked(False)
+                self.blur_checkbox.setChecked(False)
+
+    def get_replacewith_option(self):
+        if self.mosaic_checkbox.isChecked():
+            return 'mosaic'
+        elif self.blur_checkbox.isChecked():
+            return 'blur'
+        elif self.mask_checkbox.isChecked():
+            return 'solid'
+        else:
+            return 'none'
 
     def pause_anonymization(self):
         if hasattr(self, 'worker'):
@@ -400,31 +401,6 @@ class VideoAnonymizer(QMainWindow):
 
     def get_ffmpeg_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
-
-    # def set_ffmpeg_env_path(self):
-    #     os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-    #     print(f"Updated PATH: {os.environ['PATH']}")
-
-    # def remove_ffmpeg_env_path(self):
-    #     # ffmpeg_path = r"C:\Program Files\ffmpeg\bin"
-    #     os.environ["PATH"] = os.pathsep.join(
-    #         [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
-    #     )
-    # def is_ffmpeg_path_in_env(self):
-    #     return self.ffmpeg_path in os.environ["PATH"]
-
-        
-    # def load_model(self):
-    #     # load our serialized face detector model from disk
-    #     print("[INFO] loading face detector model...")
-    #     # prototxtPath = os.path.join('ressources/models', "deploy.prototxt")
-    #     # weightsPath = os.path.join('ressources/models',
-    #     #     "res10_300x300_ssd_iter_140000.caffemodel")
-    #     # net = cv2.dnn.readNet(prototxtPath, weightsPath)
-    #     # print("[INFO] model loaded.")
-    #     # net = YuNet("ressources/models/face_detection_yunet_2023mar.onnx")
-    #     net = CenterFace()
-    #     return net
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
