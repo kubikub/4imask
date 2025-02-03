@@ -43,7 +43,9 @@ class AnonymizationWorker(QThread):
         new_width, new_height = self.get_dimensions(self.output_format)
         print(self.output_format)
         fourcc = cv2.VideoWriter_fourcc(*'X264')
-        output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
+        # output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
+        output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
+
         print(output_name)
         out = cv2.VideoWriter(output_name, fourcc, fps, (new_width, new_height))
         # out = cv2.VideoWriter('/home/frank-kubler/anonymized_video2.avi', fourcc, fps)
@@ -451,7 +453,7 @@ class VideoAnonymizer(QMainWindow):
                 self.original_label.setPixmap(QPixmap.fromImage(p))
                 self.paused_frame_displayed = True
             return
-        
+
         # Reset the flag when updates are not paused
         self.paused_frame_displayed = False
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
