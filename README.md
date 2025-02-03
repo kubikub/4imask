@@ -19,6 +19,13 @@ Video Anonymizer est une application qui permet d'anonymiser les visages dans le
 - OpenCV
 - imutils
 - skimage
+- onnx
+for Windosw: 
+- onnxruntime-directml
+for linux
+- onnxruntime-openvino
+with NVDIA GPU
+- onnxruntime-gpu
 
 ## Installation
 
