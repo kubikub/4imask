@@ -48,7 +48,7 @@ class AnonymizationWorker(QThread):
             QMessageBox.critical(self, "Error", "Failed to open video writer.")
             cap.release()
             return
-        centerface = CenterFace(in_shape=(new_width, new_height), backend='onnxrt',  override_execution_provider='CUDAExecutionProvider') #auto
+        centerface = CenterFace(in_shape=(new_width, new_height), backend='auto') #auto
         # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
         frame_count = 0
