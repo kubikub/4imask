@@ -13,6 +13,7 @@ from apps.yunet import YuNet
 from apps.centerface import CenterFace
 from typing import Tuple
 import skimage.draw
+import platform
 
 class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
@@ -262,11 +263,10 @@ class AnonymizationWorker(QThread):
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
-        
         self.ffmpeg_path = self.get_ffmpeg_path()
-        print(self.ffmpeg_path)
-        self.set_ffmpeg_env_path()
-        print(self.is_ffmpeg_path_in_env())
+        self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
+        self.ffmpeg_env.set_ffmpeg_env_path()
+        print(self.ffmpeg_env.is_ffmpeg_path_in_env())
 
         self.setWindowTitle("Video Anonymizer")
         self.setGeometry(100, 100, 800, 600)
@@ -342,17 +342,17 @@ class VideoAnonymizer(QMainWindow):
     def get_ffmpeg_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
 
-    def set_ffmpeg_env_path(self):
-        os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-        print(f"Updated PATH: {os.environ['PATH']}")
+    # def set_ffmpeg_env_path(self):
+    #     os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+    #     print(f"Updated PATH: {os.environ['PATH']}")
 
-    def remove_ffmpeg_env_path(self):
-        # ffmpeg_path = r"C:\Program Files\ffmpeg\bin"
-        os.environ["PATH"] = os.pathsep.join(
-            [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
-        )
-    def is_ffmpeg_path_in_env(self):
-        return self.ffmpeg_path in os.environ["PATH"]
+    # def remove_ffmpeg_env_path(self):
+    #     # ffmpeg_path = r"C:\Program Files\ffmpeg\bin"
+    #     os.environ["PATH"] = os.pathsep.join(
+    #         [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
+    #     )
+    # def is_ffmpeg_path_in_env(self):
+    #     return self.ffmpeg_path in os.environ["PATH"]
 
         
     # def load_model(self):
@@ -404,8 +404,28 @@ class VideoAnonymizer(QMainWindow):
         self.original_label.setPixmap(QPixmap.fromImage(p))
 
     def closeEvent(self, event):
-        self.remove_ffmpeg_env_path()
+        self.ffmpeg_env.remove_ffmpeg_env_path()
         event.accept()
+
+class FFmpegPathManager:
+    def __init__(self, ffmpeg_path):
+        self.ffmpeg_path = ffmpeg_path
+
+    def set_ffmpeg_env_path(self):
+        if platform.system() == "Windows":
+            os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+        else:
+            os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+        print(f"Updated PATH: {os.environ['PATH']}")
+
+    def remove_ffmpeg_env_path(self):
+        os.environ["PATH"] = os.pathsep.join(
+            [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
+        )
+
+    def is_ffmpeg_path_in_env(self):
+        return self.ffmpeg_path in os.environ["PATH"]
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
