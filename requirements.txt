@@ -5,4 +5,4 @@ pyqtdarktheme
 opencv-python
 opencv-python-headless
 onnxruntime-directml
-skimage
+scikit-image
