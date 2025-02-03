@@ -265,11 +265,12 @@ class VideoAnonymizer(QMainWindow):
         self.layout.addWidget(self.format_label)
 
         self.format_combo = QComboBox()
-        self.format_combo.addItems(["360p", "480p", "720p", "1080p"])
+        self.format_combo.addItems(["480p", "360p", "720p", "1080p"])
         self.layout.addWidget(self.format_combo)
 
         self.anonymization_options_layout = QHBoxLayout()
         self.mosaic_checkbox = QCheckBox("Mosaic")
+        self.mosaic_checkbox.setChecked(True)
         self.blur_checkbox = QCheckBox("Blur")
         self.mask_checkbox = QCheckBox("Mask")
         self.mosaic_checkbox.toggled.connect(self.update_checkboxes)
@@ -311,8 +312,8 @@ class VideoAnonymizer(QMainWindow):
         self.original_label = QLabel("Original Video")
         self.layout.addWidget(self.original_label)
 
-        self.anonymized_label = QLabel("Anonymized Video")
-        self.layout.addWidget(self.anonymized_label)
+        # self.anonymized_label = QLabel("Anonymized Video")
+        # self.layout.addWidget(self.anonymized_label)
 
         self.video_path = None
         self.cap = None
