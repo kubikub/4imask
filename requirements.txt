@@ -3,8 +3,10 @@ pyqtdarktheme
 #pyqtdarktheme==2.1.0 --ignore-requires-python # pour python3.12
 #pyyaml
 opencv-python
-opencv-python-headless
+#opencv-python-headless
+onnxruntime
 onnx
 onnxruntime-directml
 onnxruntime-openvino
 scikit-image
+imutils
