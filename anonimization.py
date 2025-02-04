@@ -72,7 +72,7 @@ class AnonymizationWorker(QThread):
             frame = imutils.resize(frame, width=new_width)
             
             faces = yolo_model.detect_faces(frame, 0.25, 0.45)
-
+            
             frame = blur_faces(faces, frame, 20)
             # detections, _ = centerface(frame, threshold=0.4)
             # self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)

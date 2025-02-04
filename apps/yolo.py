@@ -2,8 +2,9 @@ from pathlib import Path
 from typing import List
 from PIL import Image, ImageFilter
 from ultralytics import YOLO
+import numpy as np
 
-model_path = Path("yolo11n-face.pt")
+model_path = Path("./apps/yolov11n-face.pt")
 
 
 class YOLOModel:
@@ -24,6 +25,8 @@ class YOLOModel:
         return face_boxes
 
 def blur_faces(face_boxes: List[tuple[int, ...]], image: Image, radius: int = 20) -> Image:
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
     for face_box in face_boxes:
         region = image.crop(face_box).filter(ImageFilter.GaussianBlur(radius))
         image.paste(region, face_box)
