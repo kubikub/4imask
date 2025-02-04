@@ -23,7 +23,7 @@ class YOLOModel:
         pass
 
     def detect_faces(self, image_path: str, conf: float, iou: float) -> List[tuple[int, ...]] | None:
-        results = self._model.predict(image_path, conf=conf, iou=iou, verbose=False,  device=self.device)
+        results = self._model.predict(image_path, conf=conf, iou=iou, verbose=False,  device=self.device, half=True, agnostic_nms=True)
 
         has_faces = any(result.boxes for result in results)
 

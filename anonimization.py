@@ -54,7 +54,7 @@ class AnonymizationWorker(QThread):
             QMessageBox.critical(self, "Error", "Failed to open video writer.")
             cap.release()
             return
-        centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')  # auto
+        # centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')  # auto
         yolo_model = YOLOModel()
 
         # centerface.backend = 'onnxruntime-directml'
