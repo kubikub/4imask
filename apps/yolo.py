@@ -34,22 +34,34 @@ class YOLOModel:
 
         return face_boxes
 
+
 def blur_faces(face_boxes: List[tuple[int, ...]], image: np.ndarray, radius: int = 20, replace_with: str = 'blur') -> np.ndarray:
     pil_image = Image.fromarray(image)
     for face_box in face_boxes:
         # Agrandir légèrement la boîte
         x0, y0, x1, y1 = face_box
-        x0, y0, x1, y1 = x0 - 20, y0 - 20, x1 + 20, y1 + 20
-        
+        x0, y0, x1, y1 = scale_bb(x0, y0, x1, y1)
+        # x0 - 20, y0 - 20, x1 + 20, y1 + 20
+
         # Créer un masque pour l'ellipse
         mask = Image.new('L', pil_image.size, 0)
         draw = ImageDraw.Draw(mask)
         fill = 255 
         draw.ellipse([x0, y0, x1, y1], fill=fill)
-        
+
         if replace_with == 'blur':
             # Appliquer le flou gaussien à la région elliptique
             blurred_image = pil_image.filter(ImageFilter.GaussianBlur(radius))
             pil_image.paste(blurred_image, mask=mask)
-            
+
     return np.array(pil_image)
+
+
+def scale_bb(x0, y0, x1, y1, mask_scale=1.3):
+    s = mask_scale - 1.0
+    h, w = y1 - y0, x1 - x0
+    y0 -= h * s
+    y1 += h * s
+    x0 -= w * s
+    x1 += w * s
+    return np.round([x0, y0, x1, y1]).astype(int)

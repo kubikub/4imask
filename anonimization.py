@@ -17,6 +17,7 @@ import skimage.draw
 import platform
 from apps.yolo import YOLOModel
 from apps.yolo import blur_faces
+import platform
 class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
     time_remaining_updated = Signal(int)
@@ -43,7 +44,10 @@ class AnonymizationWorker(QThread):
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_width, new_height = self.get_dimensions(self.output_format)
         print(self.output_format)
-        fourcc = cv2.VideoWriter_fourcc(*'X264')
+        if platform.system() == "Windows":
+            fourcc = cv2.VideoWriter_fourcc(*'h264')
+        else:
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         # output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
         output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
 
