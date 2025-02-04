@@ -73,7 +73,7 @@ class AnonymizationWorker(QThread):
             
             faces = yolo_model.detect_faces(frame, 0.25, 0.45)
             if faces is not None:
-                frame = blur_faces(faces, frame, 20)
+                frame = blur_faces(faces, frame, 20, self.replacewith)
             # detections, _ = centerface(frame, threshold=0.4)
             # self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
             
@@ -256,9 +256,9 @@ class VideoAnonymizer(QMainWindow):
         self.ffmpeg_path = self.get_ffmpeg_path()
         self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
         self.ffmpeg_env.set_ffmpeg_env_path()
-        print(self.ffmpeg_env.is_ffmpeg_path_in_env())
+        print("FFmpeg path in environment: ", self.ffmpeg_env.is_ffmpeg_path_in_env())
 
-        self.setWindowTitle("Video Anonymizer")
+        self.setWindowTitle("4iMask Anonymizer")
         self.setGeometry(100, 100, 800, 600)
 
         self.central_widget = QWidget()
@@ -282,9 +282,11 @@ class VideoAnonymizer(QMainWindow):
 
         self.anonymization_options_layout = QHBoxLayout()
         self.mosaic_checkbox = QCheckBox("Mosaic")
-        self.mosaic_checkbox.setChecked(True)
+        self.mosaic_checkbox.setEnabled(False)
         self.blur_checkbox = QCheckBox("Blur")
+        self.blur_checkbox.setChecked(True)
         self.mask_checkbox = QCheckBox("Mask")
+        self.mask_checkbox.setEnabled(False)
         self.mosaic_checkbox.toggled.connect(self.update_checkboxes)
         self.blur_checkbox.toggled.connect(self.update_checkboxes)
         self.mask_checkbox.toggled.connect(self.update_checkboxes)
@@ -423,8 +425,8 @@ class VideoAnonymizer(QMainWindow):
             self.resume_button.setEnabled(False)
             self.stop_button.setEnabled(False)
             self.blur_checkbox.setEnabled(True)
-            self.mask_checkbox.setEnabled(True)
-            self.mosaic_checkbox.setEnabled(True)
+            self.mask_checkbox.setEnabled(False)
+            self.mosaic_checkbox.setEnabled(False)
             self.play_button.setEnabled(False)
 
     def get_ffmpeg_path(self):
@@ -479,6 +481,9 @@ class VideoAnonymizer(QMainWindow):
             QMessageBox.warning(self, "Warning", "Anonymization is not in progress. Please start the anonymization first.")
 
     def closeEvent(self, event):
+        if hasattr(self, 'worker') and self.worker.isRunning():
+            self.worker.stop()
+            self.worker.wait()
         self.ffmpeg_env.remove_ffmpeg_env_path()
         event.accept()
 
@@ -491,7 +496,7 @@ class FFmpegPathManager:
             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
         else:
             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-        print(f"Updated PATH: {os.environ['PATH']}")
+        # print(f"Updated PATH: {os.environ['PATH']}")
 
     def remove_ffmpeg_env_path(self):
         os.environ["PATH"] = os.pathsep.join(
