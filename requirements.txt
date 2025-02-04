@@ -13,3 +13,6 @@ scikit-image
 imutils
 ultralytics
 openvino
+torch
+torchvision
+torchaudio

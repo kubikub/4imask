@@ -3,17 +3,27 @@ from typing import List
 from PIL import Image, ImageFilter, ImageDraw
 from ultralytics import YOLO
 import numpy as np
+import torch
 
-#Ämodel_path = Path("./apps/yolov11n-face.pt")
-model_path = Path("./apps/yolov11n-face_openvino_model" )
+#model_path = Path("./apps/yolov11n-face.pt")
+# model_path = Path("./apps/yolov11n-face_openvino_model" )
 
 class YOLOModel:
     def __init__(self):
-        self._model = YOLO(model_path.absolute(), task="detect", verbose=False)
+        
+        if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+            self.device = "cuda"
+            self.model_path = Path("./apps/yolov11n-face.pt")
+        else:
+            self.device = None
+            self.model_path = Path("./apps/yolov11n-face_openvino_model" )
+            print("Using openvino for YOLO model")
+        
+        self._model = YOLO(self.model_path.absolute(), task="detect", verbose=False)
         pass
 
     def detect_faces(self, image_path: str, conf: float, iou: float) -> List[tuple[int, ...]] | None:
-        results = self._model.track(image_path, conf=conf, iou=iou, verbose=False)
+        results = self._model.predict(image_path, conf=conf, iou=iou, verbose=False,  device=self.device)
 
         has_faces = any(result.boxes for result in results)
 
@@ -29,7 +39,7 @@ def blur_faces(face_boxes: List[tuple[int, ...]], image: np.ndarray, radius: int
     for face_box in face_boxes:
         # Agrandir légèrement la boîte
         x0, y0, x1, y1 = face_box
-        x0, y0, x1, y1 = x0 - 10, y0 - 10, x1 + 10, y1 + 10
+        x0, y0, x1, y1 = x0 - 20, y0 - 20, x1 + 20, y1 + 20
         
         # Créer un masque pour l'ellipse
         mask = Image.new('L', pil_image.size, 0)
