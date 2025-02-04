@@ -286,11 +286,11 @@ class VideoAnonymizer(QMainWindow):
 
         self.anonymization_options_layout = QHBoxLayout()
         self.mosaic_checkbox = QCheckBox("Mosaic")
-        self.mosaic_checkbox.setEnabled(False)
+        self.mosaic_checkbox.setEnabled(True)
         self.blur_checkbox = QCheckBox("Blur")
         self.blur_checkbox.setChecked(True)
         self.mask_checkbox = QCheckBox("Mask")
-        self.mask_checkbox.setEnabled(False)
+        self.mask_checkbox.setEnabled(True)
         self.mosaic_checkbox.toggled.connect(self.update_checkboxes)
         self.blur_checkbox.toggled.connect(self.update_checkboxes)
         self.mask_checkbox.toggled.connect(self.update_checkboxes)
@@ -429,8 +429,8 @@ class VideoAnonymizer(QMainWindow):
             self.resume_button.setEnabled(False)
             self.stop_button.setEnabled(False)
             self.blur_checkbox.setEnabled(True)
-            self.mask_checkbox.setEnabled(False)
-            self.mosaic_checkbox.setEnabled(False)
+            self.mask_checkbox.setEnabled(True)
+            self.mosaic_checkbox.setEnabled(True)
             self.play_button.setEnabled(False)
 
     def get_ffmpeg_path(self):
