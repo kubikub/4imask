@@ -15,7 +15,8 @@ from apps.centerface import CenterFace
 from typing import Tuple
 import skimage.draw
 import platform
-
+from apps.yolo import YOLOModel
+from apps.yolo import blur_faces
 class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
     time_remaining_updated = Signal(int)
@@ -54,6 +55,8 @@ class AnonymizationWorker(QThread):
             cap.release()
             return
         centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')  # auto
+        yolo_model = YOLOModel()
+
         # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
         frame_count = 0
@@ -67,8 +70,13 @@ class AnonymizationWorker(QThread):
             if not ret:
                 break
             frame = imutils.resize(frame, width=new_width)
-            detections, _ = centerface(frame, threshold=0.4)
-            self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
+            
+            faces = yolo_model.detect_faces(frame, 0.25, 0.45)
+
+            frame = blur_faces(faces, frame, 20)
+            # detections, _ = centerface(frame, threshold=0.4)
+            # self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
+            
             out.write(frame)
             frame_count += 1
             # Debugging information
