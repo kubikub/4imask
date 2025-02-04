@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import List
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageDraw
 from ultralytics import YOLO
 import numpy as np
 
-model_path = Path("./apps/yolov11n-face.pt")
-
+#Ämodel_path = Path("./apps/yolov11n-face.pt")
+model_path = Path("./apps/yolov11n-face_openvino_model" )
 
 class YOLOModel:
     def __init__(self):
@@ -13,7 +13,7 @@ class YOLOModel:
         pass
 
     def detect_faces(self, image_path: str, conf: float, iou: float) -> List[tuple[int, ...]] | None:
-        results = self._model.predict(image_path, conf=conf, iou=iou, verbose=False, device=0)
+        results = self._model.track(image_path, conf=conf, iou=iou, verbose=False)
 
         has_faces = any(result.boxes for result in results)
 
@@ -24,11 +24,19 @@ class YOLOModel:
 
         return face_boxes
 
-def blur_faces(face_boxes: List[tuple[int, ...]], image: Image, radius: int = 20) -> Image:
-    if isinstance(image, np.ndarray):
-        image = Image.fromarray(image)
+def blur_faces(face_boxes: List[tuple[int, ...]], image: np.ndarray, radius: int = 20) -> np.ndarray:
+    pil_image = Image.fromarray(image)
     for face_box in face_boxes:
-        region = image.crop(face_box).filter(ImageFilter.GaussianBlur(radius))
-        image.paste(region, face_box)
-    image = np.array(image)
-    return image
+        # Agrandir légèrement la boîte
+        x0, y0, x1, y1 = face_box
+        x0, y0, x1, y1 = x0 - 10, y0 - 10, x1 + 10, y1 + 10
+        
+        # Créer un masque pour l'ellipse
+        mask = Image.new('L', pil_image.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse([x0, y0, x1, y1], fill=255)
+        
+        # Appliquer le flou gaussien à la région elliptique
+        blurred_image = pil_image.filter(ImageFilter.GaussianBlur(radius))
+        pil_image.paste(blurred_image, mask=mask)
+    return np.array(pil_image)
