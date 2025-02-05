@@ -1,0 +1,1 @@
+pyinstaller 4imask_anonymizer.py --console --add-data "res:res" --icon="res/icons/4itec.ico" --hidden-import=ultralytics.yolo

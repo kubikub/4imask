@@ -309,14 +309,17 @@ class VideoAnonymizer(QMainWindow):
 
         self.pause_button = QPushButton("Pause")
         self.pause_button.clicked.connect(self.pause_anonymization)
+        self.pause_button.setEnabled(False)
         self.buttons_layout.addWidget(self.pause_button)
 
         self.resume_button = QPushButton("Resume")
         self.resume_button.clicked.connect(self.resume_anonymization)
+        self.resume_button.setEnabled(False)
         self.buttons_layout.addWidget(self.resume_button)
 
         self.stop_button = QPushButton("Stop")
         self.stop_button.clicked.connect(self.stop_anonymization)
+        self.stop_button.setEnabled(False)
         self.buttons_layout.addWidget(self.stop_button)
 
         self.play_button = QPushButton("Play Preview")
@@ -537,11 +540,11 @@ class VideoAnonymizer(QMainWindow):
         self.pause_updates = True
         self.play_button.setText("Play Preview")
         self.is_playing = False
-        self.stop_button.setEnabled(True)
+        # self.stop_button.setEnabled(True)
         self.select_button.setEnabled(True)
         self.format_combo.setEnabled(True)
-        self.resume_button.setEnabled(True)
-        self.pause_button.setEnabled(True)
+        # self.resume_button.setEnabled(True)
+        # self.pause_button.setEnabled(True)
 
     def closeEvent(self, event):
         if hasattr(self, 'worker') and self.worker.isRunning():
