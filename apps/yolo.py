@@ -14,10 +14,10 @@ class YOLOModel:
         
         if torch.cuda.is_available() and torch.cuda.device_count() > 0:
             self.device = "cuda"
-            self.model_path = Path("./apps/yolov11n-face.pt")
+            self.model_path = Path("./res/yolov11n-face.pt")
         else:
             self.device = None
-            self.model_path = Path("./apps/yolov11n-face_openvino_model" )
+            self.model_path = Path("./res/yolov11n-face_openvino_model" )
             print("Using openvino for YOLO model")
         
         self._model = YOLO(self.model_path.absolute(), task="detect", verbose=False)
