@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
                                 QHBoxLayout, QVBoxLayout, QWidget, QLabel, QProgressBar, QComboBox, QMessageBox, QCheckBox)
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QIcon
 from PySide6.QtCore import QTimer, QThread, Signal
 import numpy as np
 import imutils
@@ -18,6 +18,8 @@ import platform
 from apps.yolo import YOLOModel
 from apps.yolo import blur_faces
 import platform
+import qdarktheme
+from apps.utils import resource_path
 class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
     time_remaining_updated = Signal(int)
@@ -574,7 +576,12 @@ class FFmpegPathManager:
 
 
 if __name__ == "__main__":
+    qdarktheme.enable_hi_dpi()
     app = QApplication(sys.argv)
+    path = resource_path("ressources/icons/4itec.ico")
+    app.setWindowIcon(QIcon(path))
+    app.setStyle('Fusion')
+    qdarktheme.setup_theme("light")
     window = VideoAnonymizer()
     window.show()
     sys.exit(app.exec())
