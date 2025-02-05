@@ -10,7 +10,7 @@ from apps.utils import resource_path
 
 # Find file relative to the location of this code files
 # f'{os.path.dirname(__file__)}/res/models/centerface.onnx'
-default_onnx_path = resource_path('../res/models/centerface.onnx')
+default_onnx_path = resource_path('res/models/centerface.onnx')
 
 
 def ensure_rgb(img: np.ndarray) -> np.ndarray:
