@@ -3,16 +3,17 @@ from typing import List
 from PIL import Image, ImageFilter, ImageDraw
 from ultralytics import YOLO
 import numpy as np
-import torch
+# from torch import cuda
 import cv2
 from apps.utils import resource_path
 #model_path = Path("./apps/yolov11n-face.pt")
 # model_path = Path("./apps/yolov11n-face_openvino_model" )
-
+import GPUtil as gpu
 class YOLOModel:
     def __init__(self):
-        
-        if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+        # Check if GPU is available and has more than 0 GPUs
+        print(gpu.getAvailable())
+        if gpu.getAvailable() and gpu.getGPUs() > 0:
             self.device = "cuda"
             self.model_path = resource_path("res/models/yolov11n-face.pt")
         else:

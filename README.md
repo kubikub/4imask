@@ -61,3 +61,9 @@ Les contributions sont les bienvenues ! Veuillez soumettre une pull request ou o
 ## Licence
 
 Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## Sources
+
+- [OpenCV Zoo - Face Detection Yunet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)
+- [ORB-HD - Deface](https://github.com/ORB-HD/deface)
+- [Akanametov - YOLO Face](https://github.com/akanametov/yolo-face)

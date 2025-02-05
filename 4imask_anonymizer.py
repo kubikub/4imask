@@ -12,11 +12,9 @@ import imutils
 import os
 from apps.yunet import YuNet
 from apps.centerface import CenterFace
-from typing import Tuple
-import skimage.draw
+
 import platform
 from apps.yolo import YOLOModel
-from apps.yolo import blur_faces
 import platform
 import qdarktheme
 from apps.utils import resource_path
@@ -34,6 +32,7 @@ class AnonymizationWorker(QThread):
         self._is_stopped = False
         self.replacewith = 'blur'  # Default value
         self.mask_size = 1.3
+        self.model = 'yolo'
         self.write_output = write_output
 
     def run(self):
@@ -64,7 +63,22 @@ class AnonymizationWorker(QThread):
                 cap.release()
                 return
         # centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')  # auto
-        yolo_ = YOLOModel()
+        if self.model == 'yolo':
+            yolo_ = YOLOModel()
+            centerface = None
+            yunet = None
+        elif self.model == 'centerface':
+            centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')  # auto
+            yolo_ = None
+            self.yunet = None
+        elif self.model == 'yunet':
+            self.yunet = YuNet([new_width, new_height])  # auto
+            yolo_ = None
+            centerface = None
+        else:
+            yolo_ = None
+            centerface = None
+            self.yunet = None
 
         # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
@@ -79,13 +93,16 @@ class AnonymizationWorker(QThread):
             if not ret:
                 break
             frame = imutils.resize(frame, width=new_width)
-            
-            faces = yolo_.detect_faces(frame, 0.25, 0.45)
-            if faces is not None:
-                frame = yolo_.mask_faces(faces, frame, 20, self.replacewith, self.mask_size)
-            # detections, _ = centerface(frame, threshold=0.4)
-            # self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
-            
+            if yolo_ is not None:
+                faces = yolo_.detect_faces(frame, 0.25, 0.45)
+                if faces is not None:
+                    frame = yolo_.mask_faces(faces, frame, 20, self.replacewith, self.mask_size)
+            elif centerface is not None:
+                detections, _ = centerface(frame, threshold=0.4)
+                centerface.anonymize_frame(detections, frame, self.mask_size, replacewith=self.replacewith, ellipse=True, draw_scores=False, replaceimg=None, mosaicsize=15)
+            elif self.yunet is not None:
+                frame = self.yunet_mechanism(frame)
+            # Write the frame to the output video file
             out.write(frame) if self.write_output else None
             frame_count += 1
             # Debugging information
@@ -131,133 +148,40 @@ class AnonymizationWorker(QThread):
         else:
             return 640, 480
 
-    def visualize(self, image, results, box_color=(0, 255, 0), text_color=(0, 0, 255), fps=None):
-        output = image.copy()
-        landmark_color = [
-            (255,   0,   0),  # right eye
-            (0,   0, 255),  # left eye
-            (0, 255,   0),  # nose tip
-            (255,   0, 255),  # right mouth corner
-            (0, 255, 255)  # left mouth corner
-        ]
-
-        if fps is not None:
-            cv2.putText(output, 'FPS: {:.2f}'.format(fps), (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color)
-
-        for det in results:
-            bbox = det[0:4].astype(np.int32)
-            cv2.rectangle(output, (bbox[0], bbox[1]), (bbox[0]+bbox[2], bbox[1]+bbox[3]), box_color, 2)
-
-            conf = det[-1]
-            cv2.putText(output, '{:.4f}'.format(conf), (bbox[0], bbox[1]+12), cv2.FONT_HERSHEY_DUPLEX, 0.5, text_color)
-
-            landmarks = det[4:14].astype(np.int32).reshape((5, 2))
-            for idx, landmark in enumerate(landmarks):
-                cv2.circle(output, landmark, 2, landmark_color[idx], 2)
-
-        return output
-
-    def anonymize_frame(self, dets, frame, mask_scale,
-                        replacewith, ellipse, draw_scores, replaceimg, mosaicsize
-                        ):
-        for i, det in enumerate(dets):
-            boxes, score = det[:4], det[4]
-            x1, y1, x2, y2 = boxes.astype(int)
-            x1, y1, x2, y2 = self.scale_bb(x1, y1, x2, y2, mask_scale)
-            # Clip bb coordinates to valid frame region
-            y1, y2 = max(0, y1), min(frame.shape[0] - 1, y2)
-            x1, x2 = max(0, x1), min(frame.shape[1] - 1, x2)
-            self.draw_det(
-                frame, score, i, x1, y1, x2, y2,
-                replacewith=replacewith,
-                ellipse=ellipse,
-                draw_scores=draw_scores,
-                replaceimg=replaceimg,
-                mosaicsize=mosaicsize
-            )
-
-    def scale_bb(self, x1, y1, x2, y2, mask_scale=1.0):
-        s = mask_scale - 1.0
-        h, w = y2 - y1, x2 - x1
-        y1 -= h * s
-        y2 += h * s
-        x1 -= w * s
-        x2 += w * s
-        return np.round([x1, y1, x2, y2]).astype(int)
-
-    def draw_det(self,
-                 frame, score, det_idx, x1, y1, x2, y2,
-                 replacewith: str = 'blur',
-                 ellipse: bool = True,
-                 draw_scores: bool = False,
-                 ovcolor: Tuple[int] = (0, 0, 0),
-                 replaceimg=None,
-                 mosaicsize: int = 20):
-        if replacewith == 'solid':
-            cv2.rectangle(frame, (x1, y1), (x2, y2), ovcolor, -1)
-        elif replacewith == 'blur':
-            bf = 2  # blur factor (number of pixels in each dimension that the face will be reduced to)
-            blurred_box = cv2.blur(
-                frame[y1:y2, x1:x2],
-                (abs(x2 - x1) // bf, abs(y2 - y1) // bf)
-            )
-            if ellipse:
-                roibox = frame[y1:y2, x1:x2]
-                # Get y and x coordinate lists of the "bounding ellipse"
-                ey, ex = skimage.draw.ellipse((y2 - y1) // 2, (x2 - x1) // 2, (y2 - y1) // 2, (x2 - x1) // 2)
-                roibox[ey, ex] = blurred_box[ey, ex]
-                frame[y1:y2, x1:x2] = roibox
-            else:
-                frame[y1:y2, x1:x2] = blurred_box
-        elif replacewith == 'img':
-            target_size = (x2 - x1, y2 - y1)
-            resized_replaceimg = cv2.resize(replaceimg, target_size)
-            if replaceimg.shape[2] == 3:  # RGB
-                frame[y1:y2, x1:x2] = resized_replaceimg
-            elif replaceimg.shape[2] == 4:  # RGBA
-                frame[y1:y2, x1:x2] = frame[y1:y2, x1:x2] * (1 - resized_replaceimg[:, :, 3:] / 255) + resized_replaceimg[:, :, :3] * (resized_replaceimg[:, :, 3:] / 255)
-        elif replacewith == 'mosaic':
-            for y in range(y1, y2, mosaicsize):
-                for x in range(x1, x2, mosaicsize):
-                    pt1 = (x, y)
-                    pt2 = (min(x2, x + mosaicsize - 1), min(y2, y + mosaicsize - 1))
-                    color = (int(frame[y, x][0]), int(frame[y, x][1]), int(frame[y, x][2]))
-                    cv2.rectangle(frame, pt1, pt2, color, -1)
-        elif replacewith == 'none':
-            pass
-        if draw_scores:
-            cv2.putText(
-                frame, f'{score:.2f}', (x1 + 0, y1 - 20),
-                cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0)
-            )
-
-    def anonymize_face_pixelate(self, image, blocks=3):
-        # divide the input image into NxN blocks
-        (h, w) = image.shape[:2]
-        xSteps = np.linspace(0, w, blocks + 1, dtype="int")
-        ySteps = np.linspace(0, h, blocks + 1, dtype="int")
-
-        # loop over the blocks in both the x and y direction
-        for i in range(1, len(ySteps)):
-            for j in range(1, len(xSteps)):
-                # compute the starting and ending (x, y)-coordinates
-                # for the current block
-                startX = xSteps[j - 1]
-                startY = ySteps[i - 1]
-                endX = xSteps[j]
-                endY = ySteps[i]
-
-                # extract the ROI using NumPy array slicing, compute the
-                # mean of the ROI, and then draw a rectangle with the
-                # mean RGB values over the ROI in the original image
-                roi = image[startY:endY, startX:endX]
-                (B, G, R) = [int(x) for x in cv2.mean(roi)[:3]]
-                cv2.rectangle(image, (startX, startY), (endX, endY),
-                    (B, G, R), -1)
-
-        # return the pixelated blurred image
-        return image
-
+    def yunet_mechanism(self, frame, conf_threshold=0.9):
+        # loop over the detections
+        (h, w) = frame.shape[:2] # Get the height and width of the frame
+        self.yunet.setInputSize((w, h))
+        detections = self.yunet.infer(frame)
+        # Print results
+        # print('{} faces detected.'.format(detections.shape[0]))
+        # for idx, det in enumerate(detections):
+        #     print('{}: {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f}'.format(
+        #         idx, *det[:-1])
+        #     )
+        if detections.shape[0] == 0:
+            return frame
+        frame = self.yunet.visualize(frame, detections)
+        return frame
+        # else:
+        #     print(detections.shape)
+        #     for i in range(0, detections.shape[2]):
+        #         # extract the confidence (i.e., probability) associated with
+        #         # the detection
+        #         confidence = detections[0, 0, i, 2]
+        #         # filter out weak detections by ensuring the confidence is
+        #         # greater than the minimum confidence
+        #         if confidence > 0.5:
+        #             # compute the (x, y)-coordinates of the bounding box for
+        #             # the object
+        #             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+        #             (startX, startY, endX, endY) = box.astype("int")
+        #             # extract the face ROI
+        #             face = frame[startY:endY, startX:endX]
+        #             face = self.yunet.anonymize_face_pixelate(face, blocks=3)
+        #             # store the blurred face in the output image
+        #             frame[startY:endY, startX:endX] = face
+        # return frame        
 
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
@@ -323,8 +247,21 @@ class VideoAnonymizer(QMainWindow):
 
         self.anonymization_options_layout.addWidget(self.spinbox)
         self.layout.addLayout(self.anonymization_options_layout)
-        self.buttons_layout = QHBoxLayout()
         
+        self.detection_models_layout = QHBoxLayout()
+        self.yolo_checkbox = QCheckBox("Yolov11n Face")
+        self.yolo_checkbox.setChecked(True)
+        self.centerface_checkbox = QCheckBox("Center Face")
+        self.yunet_checkbox = QCheckBox("Yunet")
+        self.yolo_checkbox.toggled.connect(self.update_model_checkboxes)
+        self.centerface_checkbox.toggled.connect(self.update_model_checkboxes)
+        self.yunet_checkbox.toggled.connect(self.update_model_checkboxes)
+        self.detection_models_layout.addWidget(self.yolo_checkbox)
+        self.detection_models_layout.addWidget(self.centerface_checkbox)
+        self.detection_models_layout.addWidget(self.yunet_checkbox)
+        self.layout.addLayout(self.detection_models_layout)
+        
+        self.buttons_layout = QHBoxLayout()
         self.start_button = QPushButton("Start Anonymization")
         self.start_button.clicked.connect(self.start_anonymization)
         self.buttons_layout.addWidget(self.start_button)
@@ -395,7 +332,9 @@ class VideoAnonymizer(QMainWindow):
             self.pause_updates = True
             output_format = self.format_combo.currentText()
             replacewith = self.get_replacewith_option()
+            model = self.get_model_option()
             self.worker = AnonymizationWorker(self.video_path, output_format, write_output=True)
+            self.worker.model = model
             self.worker.replacewith = replacewith
             self.worker.progress_updated.connect(self.update_progress)
             self.worker.time_remaining_updated.connect(self.update_time)
@@ -410,7 +349,9 @@ class VideoAnonymizer(QMainWindow):
             self.mask_checkbox.setEnabled(False)
             self.mosaic_checkbox.setEnabled(False)
             self.play_button.setEnabled(False)  # Disable play button during anonymization
-
+            self.yolo_checkbox.setEnabled(False)
+            self.centerface_checkbox.setEnabled(False)
+            self.yunet_checkbox.setEnabled(False)
         else:
             QMessageBox.warning(self, "Warning", "Please select a video first.")
 
@@ -427,6 +368,39 @@ class VideoAnonymizer(QMainWindow):
                 self.mosaic_checkbox.setChecked(False)
                 self.blur_checkbox.setChecked(False)
         self.get_replacewith_option()
+
+    def update_model_checkboxes(self, checked):
+        if checked:
+            sender = self.sender()
+            if sender == self.yolo_checkbox:
+                self.centerface_checkbox.setChecked(False)
+                self.yunet_checkbox.setChecked(False)
+            elif sender == self.centerface_checkbox:
+                self.yolo_checkbox.setChecked(False)
+                self.yunet_checkbox.setChecked(False)
+            elif sender == self.yunet_checkbox:
+                self.yolo_checkbox.setChecked(False)
+                self.centerface_checkbox.setChecked(False)
+        self.get_model_option()
+    
+    def get_model_option(self):
+        if self.yolo_checkbox.isChecked():
+            if hasattr(self, 'worker'):
+                self.worker.model = 'yolo'
+            else:
+                return 'yolo'
+        elif self.centerface_checkbox.isChecked():
+            if hasattr(self, 'worker'):
+                self.worker.model = 'face'
+            else:
+                return 'centerface'
+        elif self.yunet_checkbox.isChecked():
+            if hasattr(self, 'worker'):
+                self.worker.model = 'yunet'
+            else:
+                return 'yunet'
+        else:
+            return 'none'
 
     def update_mask_size(self, value):
         print(value)
@@ -476,8 +450,12 @@ class VideoAnonymizer(QMainWindow):
             self.blur_checkbox.setEnabled(True)
             self.mask_checkbox.setEnabled(True)
             self.mosaic_checkbox.setEnabled(True)
+            self.yolo_checkbox.setEnabled(True)
+            self.centerface_checkbox.setEnabled(True)
+            self.yunet_checkbox.setEnabled(True)
             self.play_button.setEnabled(True)  # Enable play button after stopping
             self.play_button.setText("Play Preview")
+            
             self.is_playing = False
 
     def get_ffmpeg_path(self):
@@ -501,7 +479,10 @@ class VideoAnonymizer(QMainWindow):
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
         self.stop_button.setEnabled(False)
-        self.play_button.setEnabled(False)
+        self.play_button.setEnabled(True)
+        self.yolo_checkbox.setEnabled(True)
+        self.centerface_checkbox.setEnabled(True)
+        self.yunet_checkbox.setEnabled(True)
         self.play_button.setText("Play Preview")
         self.is_playing = False
 
@@ -545,7 +526,9 @@ class VideoAnonymizer(QMainWindow):
             self.pause_updates = False
             output_format = self.format_combo.currentText()
             replacewith = self.get_replacewith_option()
+            model = self.get_model_option()
             self.worker = AnonymizationWorker(self.video_path, output_format, write_output=False)
+            self.worker.model = model
             self.worker.replacewith = replacewith
             self.worker.frame_emited.connect(self.update_frame)
             self.worker.start()
@@ -558,6 +541,9 @@ class VideoAnonymizer(QMainWindow):
             self.format_combo.setEnabled(False)
             self.resume_button.setEnabled(False)
             self.pause_button.setEnabled(False)
+            self.yolo_checkbox.setEnabled(False)
+            self.centerface_checkbox.setEnabled(False)
+            self.yunet_checkbox.setEnabled(False)
 
         else:
             QMessageBox.warning(self, "Warning", "Please select a video first.")
