@@ -1,1 +1,3 @@
 pyinstaller 4imask_anonymizer.py --console --add-data "res:res" --icon="res/icons/4itec.ico" --hidden-import=ultralytics.yolo
+
+pyinstaller 4imask_anonymizer.py --noconsole --add-data "res:res" --icon="res/icons/4itec.ico" --hidden-import=ultralytics --collect-submodules=openvino --collect-binaries=openvino --collect-data=openvino
