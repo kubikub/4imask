@@ -101,7 +101,7 @@ class AnonymizationWorker(QThread):
                 detections, _ = centerface(frame, threshold=0.4)
                 centerface.anonymize_frame(detections, frame, self.mask_size, replacewith=self.replacewith, ellipse=True, draw_scores=False, replaceimg=None, mosaicsize=15)
             elif self.yunet is not None:
-                frame = self.yunet_mechanism(frame)
+                frame = self.yunet_mechanism(frame, self.mask_size, replacewith=self.replacewith, ellipse=True, draw_scores=False, replaceimg=None, mosaicsize=15)
             # Write the frame to the output video file
             out.write(frame) if self.write_output else None
             frame_count += 1
@@ -148,7 +148,7 @@ class AnonymizationWorker(QThread):
         else:
             return 640, 480
 
-    def yunet_mechanism(self, frame, conf_threshold=0.9):
+    def yunet_mechanism(self, frame, mask_size, replacewith, ellipse=True, draw_scores=False, replaceimg=None, mosaicsize=15):
         # loop over the detections
         (h, w) = frame.shape[:2] # Get the height and width of the frame
         self.yunet.setInputSize((w, h))
@@ -159,9 +159,9 @@ class AnonymizationWorker(QThread):
         #     print('{}: {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f}'.format(
         #         idx, *det[:-1])
         #     )
-        if detections.shape[0] == 0:
-            return frame
-        frame = self.yunet.visualize(frame, detections)
+        # if detections.shape[0] == 0:
+        #     return frame
+        frame = self.yunet.visualize(frame, detections, mask_size, replacewith, ellipse=True, draw_scores=False, replaceimg=None, mosaicsize=15)
         return frame
         # else:
         #     print(detections.shape)

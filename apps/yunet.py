@@ -5,7 +5,8 @@
 # Third party copyrights are property of their respective owners.
 
 from itertools import product
-
+from typing import Tuple
+import skimage.draw
 import numpy as np
 import cv2 as cv2
 from apps.utils import resource_path
@@ -57,7 +58,13 @@ class YuNet:
         return np.empty(shape=(0, 5)) if faces[1] is None else faces[1]
 
     
-    def visualize(self, image, results, box_color=(0, 255, 0), text_color=(0, 0, 255), fps=None):
+    def visualize(self, image, results, mask_scale=1.3, replacewith='blur', ellipse: bool = True,
+                  draw_scores: bool = False,
+                  ovcolor: Tuple[int] = (0, 0, 0),
+                  replaceimg=None,
+                  mosaicsize: int = 2, 
+                  box_color=(0, 255, 0), 
+                  text_color=(0, 0, 255), fps=None):
         output = image.copy()
         landmark_color = [
             (255,   0,   0),  # right eye
@@ -72,10 +79,50 @@ class YuNet:
 
         for det in results:
             bbox = det[0:4].astype(np.int32)
-            face = output[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+            # x2, y2, x1, y1 = bbox
+            x1, y1, x2, y2 =bbox[0], bbox[1], bbox[0]+bbox[2], bbox[1]+bbox[3]
+            x1, y1, x2, y2 = self.scale_bb(x1, y1, x2, y2, mask_scale)
+            # Clip bb coordinates to valid frame region
+            y1, y2 = max(0, y1), min(output.shape[0] - 1, y2)
+            x1, x2 = max(0, x1), min(output.shape[1] - 1, x2)
+            if replacewith == 'solid':
+                cv2.rectangle(output, (x1, y1), (x2, y2), ovcolor, -1)
+            elif replacewith == 'blur':
+                bf = 2  # blur factor (number of pixels in each dimension that the face will be reduced to)
+                blurred_box = cv2.blur(
+                    output[y1:y2, x1:x2],
+                    (abs(x2 - x1) // bf, abs(y2 - y1) // bf)
+                )
+                if ellipse:
+                    roibox = output[y1:y2, x1:x2]
+                    # Get y and x coordinate lists of the "bounding ellipse"
+                    ey, ex = skimage.draw.ellipse((y2 - y1) // 2, (x2 - x1) // 2, (y2 - y1) // 2, (x2 - x1) // 2)
+                    roibox[ey, ex] = blurred_box[ey, ex]
+                    output[y1:y2, x1:x2] = roibox
+                else:
+                    output[y1:y2, x1:x2] = blurred_box
+            elif replacewith == 'img':
+                target_size = (x2 - x1, y2 - y1)
+                resized_replaceimg = cv2.resize(replaceimg, target_size)
+                if replaceimg.shape[2] == 3:  # RGB
+                    output[y1:y2, x1:x2] = resized_replaceimg
+                elif replaceimg.shape[2] == 4:  # RGBA
+                    output[y1:y2, x1:x2] = output[y1:y2, x1:x2] * (1 - resized_replaceimg[:, :, 3:] / 255) + resized_replaceimg[:, :, :3] * (resized_replaceimg[:, :, 3:] / 255)
+            elif replacewith == 'mosaic':
+                for y in range(y1, y2, mosaicsize):
+                    for x in range(x1, x2, mosaicsize):
+                        pt1 = (x, y)
+                        pt2 = (min(x2, x + mosaicsize - 1), min(y2, y + mosaicsize - 1))
+                        color = (int(output[y, x][0]), int(output[y, x][1]), int(output[y, x][2]))
+                        cv2.rectangle(output, pt1, pt2, color, -1)
+            elif replacewith == 'none':
+                pass
+            # ovcolor = (0, 0, 0)
+            # cv2.rectangle(output, (x1, y1), (x2, y2), ovcolor, -1)
+            # face = output[bbox[1]:bbox[3], bbox[0]:bbox[2]]
             # anonymize
-            face = self.anonymize_face_pixelate(face)
-            output[bbox[1]:bbox[3], bbox[0]:bbox[2]] = face
+            # face = self.anonymize_face_pixelate(face)
+            # output[bbox[1]:bbox[3], bbox[0]:bbox[2]] = face
             # cv2.rectangle(output, (bbox[0], bbox[1]), (bbox[0]+bbox[2], bbox[1]+bbox[3]), box_color, 2)
 
             # conf = det[-1]
@@ -87,29 +134,11 @@ class YuNet:
 
         return output
 
-    def anonymize_face_pixelate(self, image, blocks=20):
-        # divide the input image into NxN blocks
-        (h, w) = image.shape[:2]
-        xSteps = np.linspace(0, w, blocks + 1, dtype="int")
-        ySteps = np.linspace(0, h, blocks + 1, dtype="int")
-
-        # loop over the blocks in both the x and y direction
-        for i in range(1, len(ySteps)):
-            for j in range(1, len(xSteps)):
-                # compute the starting and ending (x, y)-coordinates
-                # for the current block
-                startX = xSteps[j - 1]
-                startY = ySteps[i - 1]
-                endX = xSteps[j]
-                endY = ySteps[i]
-
-                # extract the ROI using NumPy array slicing, compute the
-                # mean of the ROI, and then draw a rectangle with the
-                # mean RGB values over the ROI in the original image
-                roi = image[startY:endY, startX:endX]
-                (B, G, R) = [int(x) for x in cv2.mean(roi)[:3]]
-                cv2.rectangle(image, (startX, startY), (endX, endY),
-                    (B, G, R), -1)
-
-        # return the pixelated blurred image
-        return image
+    def scale_bb(self, x1, y1, x2, y2, mask_scale=1.0):
+        s = mask_scale - 1.0
+        h, w = y2 - y1, x2 - x1
+        y1 -= h * s
+        y2 += h * s
+        x1 -= w * s
+        x2 += w * s
+        return np.round([x1, y1, x2, y2]).astype(int)
