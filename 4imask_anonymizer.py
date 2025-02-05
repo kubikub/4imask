@@ -401,14 +401,24 @@ class VideoAnonymizer(QMainWindow):
             elif sender == self.mask_checkbox:
                 self.mosaic_checkbox.setChecked(False)
                 self.blur_checkbox.setChecked(False)
+        self.get_replacewith_option()
 
     def get_replacewith_option(self):
         if self.mosaic_checkbox.isChecked():
-            return 'mosaic'
+            if hasattr(self, 'worker'):
+                self.worker.replacewith = 'mosaic'
+            else:
+                return 'mosaic'
         elif self.blur_checkbox.isChecked():
-            return 'blur'
+            if hasattr(self, 'worker'):
+                self.worker.replacewith = 'blur'
+            else:
+                return 'blur'
         elif self.mask_checkbox.isChecked():
-            return 'solid'
+            if hasattr(self, 'worker'):
+                self.worker.replacewith = 'solid'
+            else:
+                return 'solid'
         else:
             return 'none'
 
