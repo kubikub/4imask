@@ -261,10 +261,20 @@ class AnonymizationWorker(QThread):
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ffmpeg_path = self.get_ffmpeg_path()
-        self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
-        self.ffmpeg_env.set_ffmpeg_env_path()
-        print("FFmpeg path in environment: ", self.ffmpeg_env.is_ffmpeg_path_in_env())
+        
+        # variable_name = "USERDOMAIN"
+        # value = os.getenv(variable_name)
+        # self.logger.debug(f"{variable_name}: {value}")
+        # authorized_domains = open(resource_path("ressources/.dummy"), "r").read().splitlines()
+        # if value not in authorized_domains:
+        #     QMessageBox.warning(self, "Warning", "You are not authorized to use this application.")
+        #     sys.exit()
+        
+        
+        # self.ffmpeg_path = self.get_ffmpeg_path()
+        # self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
+        # self.ffmpeg_env.set_ffmpeg_env_path()
+        # print("FFmpeg path in environment: ", self.ffmpeg_env.is_ffmpeg_path_in_env())
 
         self.setWindowTitle("4iMask Anonymizer")
         self.setGeometry(100, 100, 800, 600)
