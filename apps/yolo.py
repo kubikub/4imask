@@ -51,6 +51,9 @@ class YOLOModel:
             # Agrandir légèrement la boîte
             x1, y1, x2, y2 = face_box
             x1, y1, x2, y2 = self.scale_bb(x1, y1, x2, y2, mask_size)
+            # Clip bb coordinates to valid frame region
+            y1, y2 = max(0, y1), min(frame.shape[0] - 1, y2)
+            x1, x2 = max(0, x1), min(frame.shape[1] - 1, x2)
             if replacewith == 'solid':
                 ovcolor = (0, 0, 0)  # Couleur noire pour masquer
                 cv2.rectangle(frame, (x1, y1), (x2, y2), ovcolor, -1)
