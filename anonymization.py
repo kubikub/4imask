@@ -23,14 +23,15 @@ class AnonymizationWorker(QThread):
     time_remaining_updated = Signal(int)
     anonymization_complete = Signal()
     frame_emited = Signal(np.ndarray)
-    def __init__(self, video_path, output_format):
+    def __init__(self, video_path, output_format, write_output=False):
         super().__init__()
         self.video_path = video_path
         # self.net = net
         self.output_format = output_format
         self._is_paused = False
         self._is_stopped = False
-        self.replacewith = 'mosaic'  # Default value
+        self.replacewith = 'blur'  # Default value
+        self.write_output = write_output
 
     def run(self):
         cap = cv2.VideoCapture(self.video_path)
@@ -44,20 +45,21 @@ class AnonymizationWorker(QThread):
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_width, new_height = self.get_dimensions(self.output_format)
         print(self.output_format)
-        if platform.system() == "Windows":
-            fourcc = cv2.VideoWriter_fourcc(*'h264')
-        else:
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        # output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
-        output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
+        if self.write_output:
+            if platform.system() == "Windows":
+                fourcc = cv2.VideoWriter_fourcc(*'h264')
+            else:
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            # output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
+            output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
 
-        print(output_name)
-        out = cv2.VideoWriter(output_name, fourcc, fps, (new_width, new_height))
+            print(output_name)
+            out = cv2.VideoWriter(output_name, fourcc, fps, (new_width, new_height))
         # out = cv2.VideoWriter('/home/frank-kubler/anonymized_video2.avi', fourcc, fps)
-        if not out.isOpened():
-            QMessageBox.critical(self, "Error", "Failed to open video writer.")
-            cap.release()
-            return
+            if not out.isOpened():
+                QMessageBox.critical(self, "Error", "Failed to open video writer.")
+                cap.release()
+                return
         # centerface = CenterFace(in_shape=(new_width, new_height), backend='auto')  # auto
         yolo_model = YOLOModel()
 
@@ -81,10 +83,10 @@ class AnonymizationWorker(QThread):
             # detections, _ = centerface(frame, threshold=0.4)
             # self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
             
-            out.write(frame)
+            out.write(frame) if self.write_output else None
             frame_count += 1
             # Debugging information
-            # print(f"Frame {frame_count} written to video.")
+            print(f"Frame {frame_count} written to video.")
             self.frame_emited.emit(frame)
             # Update progress bar
             progress = (frame_count / total_frames) * 100
@@ -100,7 +102,7 @@ class AnonymizationWorker(QThread):
 
         # Release resources
         cap.release()
-        out.release()
+        out.release() if self.write_output else None
         cv2.destroyAllWindows()
         self.anonymization_complete.emit()
 
@@ -318,7 +320,7 @@ class VideoAnonymizer(QMainWindow):
         self.buttons_layout.addWidget(self.stop_button)
 
         self.play_button = QPushButton("Play Preview")
-        self.play_button.clicked.connect(self.play_anonymization)
+        self.play_button.clicked.connect(self.toggle_play_pause)
         self.buttons_layout.addWidget(self.play_button)
 
         self.layout.addLayout(self.buttons_layout)
@@ -344,6 +346,7 @@ class VideoAnonymizer(QMainWindow):
         self.timer = QTimer()
         # self.timer.timeout.connect(self.update_frame)
         self.pause_updates = False
+        self.is_playing = False
 
     def select_video(self):
         if hasattr(self, 'worker') and self.worker.isRunning():
@@ -367,7 +370,7 @@ class VideoAnonymizer(QMainWindow):
             self.pause_updates = True
             output_format = self.format_combo.currentText()
             replacewith = self.get_replacewith_option()
-            self.worker = AnonymizationWorker(self.video_path, output_format)
+            self.worker = AnonymizationWorker(self.video_path, output_format, write_output=True)
             self.worker.replacewith = replacewith
             self.worker.progress_updated.connect(self.update_progress)
             self.worker.time_remaining_updated.connect(self.update_time)
@@ -381,7 +384,7 @@ class VideoAnonymizer(QMainWindow):
             self.blur_checkbox.setEnabled(False)
             self.mask_checkbox.setEnabled(False)
             self.mosaic_checkbox.setEnabled(False)
-            self.play_button.setEnabled(True)
+            self.play_button.setEnabled(False)  # Disable play button during anonymization
 
         else:
             QMessageBox.warning(self, "Warning", "Please select a video first.")
@@ -431,7 +434,9 @@ class VideoAnonymizer(QMainWindow):
             self.blur_checkbox.setEnabled(True)
             self.mask_checkbox.setEnabled(True)
             self.mosaic_checkbox.setEnabled(True)
-            self.play_button.setEnabled(False)
+            self.play_button.setEnabled(True)  # Enable play button after stopping
+            self.play_button.setText("Play Preview")
+            self.is_playing = False
 
     def get_ffmpeg_path(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
@@ -455,34 +460,78 @@ class VideoAnonymizer(QMainWindow):
         self.resume_button.setEnabled(False)
         self.stop_button.setEnabled(False)
         self.play_button.setEnabled(False)
+        self.play_button.setText("Play Preview")
+        self.is_playing = False
 
-    def update_frame(self, frame):
-        if self.pause_updates:
-            if not hasattr(self, 'paused_frame_displayed') or not self.paused_frame_displayed:
-                rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                h, w, ch = rgb_image.shape
-                bytes_per_line = ch * w
-                convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                p = convert_to_Qt_format.scaled(720, 480)
-                self.original_label.setPixmap(QPixmap.fromImage(p))
-                self.paused_frame_displayed = True
-            return
+    def update_frame(self, frame=None):
+        if not self.pause_updates and frame is not None:
+        #     if not hasattr(self, 'paused_frame_displayed') or not self.paused_frame_displayed:
+        #         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        #         h, w, ch = rgb_image.shape
+        #         bytes_per_line = ch * w
+        #         convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        #         p = convert_to_Qt_format.scaled(720, 480)
+        #         self.original_label.setPixmap(QPixmap.fromImage(p))
+        #         self.paused_frame_displayed = True
+        #     return
 
-        # Reset the flag when updates are not paused
-        self.paused_frame_displayed = False
-        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_image.shape
-        bytes_per_line = ch * w
-        convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(720, 480)
-        self.original_label.setPixmap(QPixmap.fromImage(p))
+        # # Reset the flag when updates are not paused
+        # self.paused_frame_displayed = False
+            rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_image.shape
+            bytes_per_line = ch * w
+            convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            p = convert_to_Qt_format.scaled(720, 480)
+            self.original_label.setPixmap(QPixmap.fromImage(p))
 
-    def play_anonymization(self):
-        if hasattr(self, 'worker') and self.worker.isRunning():
+    def toggle_play_pause(self):
+        if self.is_playing:
+            self.pause_preview()
+            self.start_button.setEnabled(True)
+        else:
+            self.play_preview()
+            self.start_button.setEnabled(False)
+
+    def play_preview(self):
+        # if hasattr(self, 'worker') and self.worker.isRunning():
+        #     self.timer.timeout.connect(self.update_frame)
+        #     self.timer.start(30)
+        #     self.play_button.setText("Pause Preview")
+        #     self.is_playing = True
+        # else:
+        if self.video_path:
+            self.pause_updates = False
+            output_format = self.format_combo.currentText()
+            replacewith = self.get_replacewith_option()
+            self.worker = AnonymizationWorker(self.video_path, output_format, write_output=False)
+            self.worker.replacewith = replacewith
+            self.worker.frame_emited.connect(self.update_frame)
+            self.worker.start()
             self.timer.timeout.connect(self.update_frame)
             self.timer.start(30)
+            self.play_button.setText("Stop Preview")
+            self.is_playing = True
+            self.stop_button.setEnabled(False)
+            self.select_button.setEnabled(False)
+            self.format_combo.setEnabled(False)
+            self.resume_button.setEnabled(False)
+            self.pause_button.setEnabled(False)
+
         else:
-            QMessageBox.warning(self, "Warning", "Anonymization is not in progress. Please start the anonymization first.")
+            QMessageBox.warning(self, "Warning", "Please select a video first.")
+
+    def pause_preview(self):
+        self.timer.stop()
+        self.worker.stop()
+        self.worker.wait()
+        self.pause_updates = True
+        self.play_button.setText("Play Preview")
+        self.is_playing = False
+        self.stop_button.setEnabled(True)
+        self.select_button.setEnabled(True)
+        self.format_combo.setEnabled(True)
+        self.resume_button.setEnabled(True)
+        self.pause_button.setEnabled(True)
 
     def closeEvent(self, event):
         if hasattr(self, 'worker') and self.worker.isRunning():
