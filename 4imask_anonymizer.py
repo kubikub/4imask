@@ -3,10 +3,10 @@ import cv2
 import time
 import subprocess
 import tempfile
-from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
+from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog, QSlider, QDoubleSpinBox,
                                 QHBoxLayout, QVBoxLayout, QWidget, QLabel, QProgressBar, QComboBox, QMessageBox, QCheckBox)
 from PySide6.QtGui import QImage, QPixmap, QIcon
-from PySide6.QtCore import QTimer, QThread, Signal
+from PySide6.QtCore import QTimer, QThread, Signal, Qt
 import numpy as np
 import imutils
 import os
@@ -33,6 +33,7 @@ class AnonymizationWorker(QThread):
         self._is_paused = False
         self._is_stopped = False
         self.replacewith = 'blur'  # Default value
+        self.mask_size = 1.3
         self.write_output = write_output
 
     def run(self):
@@ -81,7 +82,7 @@ class AnonymizationWorker(QThread):
             
             faces = yolo_model.detect_faces(frame, 0.25, 0.45)
             if faces is not None:
-                frame = blur_faces(faces, frame, 20, self.replacewith)
+                frame = blur_faces(faces, frame, 20, self.replacewith, self.mask_size)
             # detections, _ = centerface(frame, threshold=0.4)
             # self.anonymize_frame(detections, frame, mask_scale=1.3, replacewith=self.replacewith, ellipse=False, draw_scores=False, replaceimg=None, mosaicsize=15)
             
@@ -261,7 +262,7 @@ class AnonymizationWorker(QThread):
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
-        
+
         # variable_name = "USERDOMAIN"
         # value = os.getenv(variable_name)
         # self.logger.debug(f"{variable_name}: {value}")
@@ -311,8 +312,17 @@ class VideoAnonymizer(QMainWindow):
         self.anonymization_options_layout.addWidget(self.mosaic_checkbox)
         self.anonymization_options_layout.addWidget(self.blur_checkbox)
         self.anonymization_options_layout.addWidget(self.mask_checkbox)
-        self.layout.addLayout(self.anonymization_options_layout)
+        self.spin_label = QLabel("Mask Size:")
+        self.anonymization_options_layout.addWidget(self.spin_label)
+        self.spinbox = QDoubleSpinBox()
+        self.spinbox.setMinimum(1.0)
+        self.spinbox.setMaximum(5.0)
+        self.spinbox.setSingleStep(0.1)
+        self.spinbox.setValue(1.3)
+        self.spinbox.valueChanged.connect(self.update_mask_size)
 
+        self.anonymization_options_layout.addWidget(self.spinbox)
+        self.layout.addLayout(self.anonymization_options_layout)
         self.buttons_layout = QHBoxLayout()
         
         self.start_button = QPushButton("Start Anonymization")
@@ -417,6 +427,13 @@ class VideoAnonymizer(QMainWindow):
                 self.mosaic_checkbox.setChecked(False)
                 self.blur_checkbox.setChecked(False)
         self.get_replacewith_option()
+
+    def update_mask_size(self, value):
+        print(value)
+        if hasattr(self, 'worker'):
+            self.worker.mask_size = value
+        else:
+            return value
 
     def get_replacewith_option(self):
         if self.mosaic_checkbox.isChecked():
@@ -562,7 +579,7 @@ class VideoAnonymizer(QMainWindow):
         if hasattr(self, 'worker') and self.worker.isRunning():
             self.worker.stop()
             self.worker.wait()
-        self.ffmpeg_env.remove_ffmpeg_env_path()
+        # self.ffmpeg_env.remove_ffmpeg_env_path()
         event.accept()
 
 class FFmpegPathManager:

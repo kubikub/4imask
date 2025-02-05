@@ -36,14 +36,14 @@ class YOLOModel:
         return face_boxes
 
 
-def blur_faces(face_boxes: List[tuple[int, ...]], image: np.ndarray, radius: int = 20,
-               replace_with: str = 'blur', mosaicsize: int = 20) -> np.ndarray:
+def blur_faces(face_boxes: List[tuple[int, ...]], image: np.ndarray, radius: int = 30,
+               replace_with: str = 'blur', mask_size : float = 1.3, mosaicsize: int = 15) -> np.ndarray:
     if replace_with == 'blur':
         pil_image = Image.fromarray(image)
         for face_box in face_boxes:
             # Agrandir légèrement la boîte
             x0, y0, x1, y1 = face_box
-            x0, y0, x1, y1 = scale_bb(x0, y0, x1, y1)
+            x0, y0, x1, y1 = scale_bb(x0, y0, x1, y1, mask_size)
             # x0 - 20, y0 - 20, x1 + 20, y1 + 20
 
             # Créer un masque pour l'ellipse
@@ -59,7 +59,7 @@ def blur_faces(face_boxes: List[tuple[int, ...]], image: np.ndarray, radius: int
         for face_box in face_boxes:
             # Agrandir légèrement la boîte
             x0, y0, x1, y1 = face_box
-            x0, y0, x1, y1 = scale_bb(x0, y0, x1, y1)
+            x0, y0, x1, y1 = scale_bb(x0, y0, x1, y1, mask_size)
             if replace_with == 'mosaic':
                 for y in range(y0, y1, mosaicsize):
                     for x in range(x0, x1, mosaicsize):
