@@ -47,11 +47,11 @@ class AnonymizationWorker(QThread):
         print(self.output_format)
         if self.write_output:
             if platform.system() == "Windows":
-                fourcc = cv2.VideoWriter_fourcc(*'h264')
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             else:
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             # output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
-            output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
+            output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mp4"
 
             print(output_name)
             out = cv2.VideoWriter(output_name, fourcc, fps, (new_width, new_height))
