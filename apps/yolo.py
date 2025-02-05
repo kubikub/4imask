@@ -23,15 +23,21 @@ class YOLOModel:
         self._model = YOLO(self.model_path, task="detect", verbose=False)
         pass
 
-    def detect_faces(self, image_path: str, conf: float, iou: float) -> List[tuple[int, ...]] | None:
-        results = self._model.predict(image_path, conf=conf, iou=iou, verbose=False,  device=self.device, half=True, agnostic_nms=True)
+    def detect_faces(self, image_path: str, conf: float, iou: float, max_width: int = None, max_height: int = None) -> List[tuple[int, ...]] | None:
+        
+        results = self._model.predict(image_path, conf=conf, iou=iou, verbose=False, device=self.device, half=True, agnostic_nms=True)
 
         has_faces = any(result.boxes for result in results)
 
         if not has_faces:
             return None
 
-        face_boxes = [tuple(map(int, box.xyxy[0])) for result in results for box in result.boxes]
+        face_boxes = []
+        for result in results:
+            for box in result.boxes:
+                x0, y0, x1, y1 = map(int, box.xyxy[0])
+                if (max_width is None or (x1 - x0) <= max_width) and (max_height is None or (y1 - y0) <= max_height):
+                    face_boxes.append((x0, y0, x1, y1))
 
         return face_boxes
 
