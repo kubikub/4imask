@@ -86,7 +86,7 @@ class AnonymizationWorker(QThread):
             out.write(frame) if self.write_output else None
             frame_count += 1
             # Debugging information
-            print(f"Frame {frame_count} written to video.")
+            # print(f"Frame {frame_count} written to video.")
             self.frame_emited.emit(frame)
             # Update progress bar
             progress = (frame_count / total_frames) * 100
