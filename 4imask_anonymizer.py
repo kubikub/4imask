@@ -14,13 +14,13 @@ class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # variable_name = "USERDOMAIN"
-        # value = os.getenv(variable_name)
-        # self.logger.debug(f"{variable_name}: {value}")
-        # authorized_domains = open(resource_path("ressources/.dummy"), "r").read().splitlines()
-        # if value not in authorized_domains:
-        #     QMessageBox.warning(self, "Warning", "You are not authorized to use this application.")
-        #     sys.exit()
+        variable_name = "USERDOMAIN"
+        value = os.getenv(variable_name)
+        self.logger.debug(f"{variable_name}: {value}")
+        authorized_domains = open(resource_path("res/.dummy"), "r").read().splitlines()
+        if value not in authorized_domains:
+            QMessageBox.warning(self, "Warning", "You are not authorized to use this application \n Please contact href=\"mailto:info@4itec.fr")
+            sys.exit()
         
         
         # self.ffmpeg_path = self.get_ffmpeg_path()
@@ -284,8 +284,8 @@ class VideoAnonymizer(QMainWindow):
             
             self.is_playing = False
 
-    def get_ffmpeg_path(self):
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
+    # def get_ffmpeg_path(self):
+    #     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
@@ -403,24 +403,24 @@ class VideoAnonymizer(QMainWindow):
         # self.ffmpeg_env.remove_ffmpeg_env_path()
         event.accept()
 
-class FFmpegPathManager:
-    def __init__(self, ffmpeg_path):
-        self.ffmpeg_path = ffmpeg_path
+# class FFmpegPathManager:
+#     def __init__(self, ffmpeg_path):
+#         self.ffmpeg_path = ffmpeg_path
 
-    def set_ffmpeg_env_path(self):
-        if platform.system() == "Windows":
-            os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-        else:
-            os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-        # print(f"Updated PATH: {os.environ['PATH']}")
+#     def set_ffmpeg_env_path(self):
+#         if platform.system() == "Windows":
+#             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+#         else:
+#             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+#         # print(f"Updated PATH: {os.environ['PATH']}")
 
-    def remove_ffmpeg_env_path(self):
-        os.environ["PATH"] = os.pathsep.join(
-            [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
-        )
+#     def remove_ffmpeg_env_path(self):
+#         os.environ["PATH"] = os.pathsep.join(
+#             [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
+#         )
 
-    def is_ffmpeg_path_in_env(self):
-        return self.ffmpeg_path in os.environ["PATH"]
+#     def is_ffmpeg_path_in_env(self):
+#         return self.ffmpeg_path in os.environ["PATH"]
 
 
 if __name__ == "__main__":
