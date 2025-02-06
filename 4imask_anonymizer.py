@@ -164,6 +164,8 @@ class VideoAnonymizer(QMainWindow):
                 self.worker.stop()
                 self.worker.wait()
             self.worker = AnonymizationWorker(self.video_path, output_format, write_output=True)
+            print(f'Model: {model}')
+            print(f'Replacewith: {replacewith}')
             self.worker.model = model
             self.worker.replacewith = replacewith
             self.worker.progress_updated.connect(self.update_progress)
@@ -217,21 +219,18 @@ class VideoAnonymizer(QMainWindow):
         if self.yolo_checkbox.isChecked():
             if hasattr(self, 'worker'):
                 self.worker.model = 'yolo'
-            else:
-                return 'yolo'
+            return 'yolo'
         elif self.centerface_checkbox.isChecked():
             if hasattr(self, 'worker'):
                 self.worker.model = 'centerface'
-            else:
-                return 'centerface'
+            return 'centerface'
         elif self.yunet_checkbox.isChecked():
             if hasattr(self, 'worker'):
                 self.worker.model = 'yunet'
-            else:
-                return 'yunet'
+            return 'yunet'
         else:
             return 'none'
-        print(self.worker.model)
+
     def update_mask_size(self, value):
         print(value)
         if hasattr(self, 'worker'):
@@ -243,18 +242,15 @@ class VideoAnonymizer(QMainWindow):
         if self.mosaic_checkbox.isChecked():
             if hasattr(self, 'worker'):
                 self.worker.replacewith = 'mosaic'
-            else:
-                return 'mosaic'
+            return 'mosaic'
         elif self.blur_checkbox.isChecked():
             if hasattr(self, 'worker'):
                 self.worker.replacewith = 'blur'
-            else:
-                return 'blur'
+            return 'blur'
         elif self.mask_checkbox.isChecked():
             if hasattr(self, 'worker'):
                 self.worker.replacewith = 'solid'
-            else:
-                return 'solid'
+            return 'solid'
         else:
             return 'none'
 
@@ -351,14 +347,20 @@ class VideoAnonymizer(QMainWindow):
             output_format = self.format_combo.currentText()
             replacewith = self.get_replacewith_option()
             model = self.get_model_option()
+            print(f'Model 1: {model}')
+            print(f'Replacewith 1: {replacewith}')
             if hasattr(self, 'worker') and self.worker.isRunning():
                 self.worker.stop()
                 self.worker.quit()
                 self.worker.wait()
                 print("Worker stopped.")
             self.worker = AnonymizationWorker(self.video_path, output_format, write_output=False)
+            print(f'Model 2 : {model}')
+            print(f'Replacewith 2 : {replacewith}')
             self.worker.model = model
             self.worker.replacewith = replacewith
+            print(f'Model 3 : {model}')
+            print(f'Replacewith 3: {replacewith}')
             self.worker.frame_emited.connect(self.update_frame)
             self.worker.start()
             self.timer.timeout.connect(self.update_frame)
