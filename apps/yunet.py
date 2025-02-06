@@ -4,12 +4,10 @@
 # Copyright (C) 2021, Shenzhen Institute of Artificial Intelligence and Robotics for Society, all rights reserved.
 # Third party copyrights are property of their respective owners.
 
-from itertools import product
 from typing import Tuple
-import skimage.draw
 import numpy as np
 import cv2 as cv2
-from apps.utils import resource_path
+from apps.utils import resource_path, draw_detections
 
 class YuNet:
 
@@ -81,57 +79,7 @@ class YuNet:
             bbox = det[0:4].astype(np.int32)
             # x2, y2, x1, y1 = bbox
             x1, y1, x2, y2 =bbox[0], bbox[1], bbox[0]+bbox[2], bbox[1]+bbox[3]
-            x1, y1, x2, y2 = self.scale_bb(x1, y1, x2, y2, mask_scale)
-            # Clip bb coordinates to valid frame region
-            y1, y2 = max(0, y1), min(output.shape[0] - 1, y2)
-            x1, x2 = max(0, x1), min(output.shape[1] - 1, x2)
-            if replacewith == 'solid':
-                cv2.rectangle(output, (x1, y1), (x2, y2), ovcolor, -1)
-            elif replacewith == 'blur':
-                bf = 2  # blur factor (number of pixels in each dimension that the face will be reduced to)
-                blurred_box = cv2.blur(
-                    output[y1:y2, x1:x2],
-                    (abs(x2 - x1) // bf, abs(y2 - y1) // bf)
-                )
-                if ellipse:
-                    roibox = output[y1:y2, x1:x2]
-                    # Get y and x coordinate lists of the "bounding ellipse"
-                    ey, ex = skimage.draw.ellipse((y2 - y1) // 2, (x2 - x1) // 2, (y2 - y1) // 2, (x2 - x1) // 2)
-                    roibox[ey, ex] = blurred_box[ey, ex]
-                    output[y1:y2, x1:x2] = roibox
-                else:
-                    output[y1:y2, x1:x2] = blurred_box
-            elif replacewith == 'img':
-                target_size = (x2 - x1, y2 - y1)
-                resized_replaceimg = cv2.resize(replaceimg, target_size)
-                if replaceimg.shape[2] == 3:  # RGB
-                    output[y1:y2, x1:x2] = resized_replaceimg
-                elif replaceimg.shape[2] == 4:  # RGBA
-                    output[y1:y2, x1:x2] = output[y1:y2, x1:x2] * (1 - resized_replaceimg[:, :, 3:] / 255) + resized_replaceimg[:, :, :3] * (resized_replaceimg[:, :, 3:] / 255)
-            elif replacewith == 'mosaic':
-                for y in range(y1, y2, mosaicsize):
-                    for x in range(x1, x2, mosaicsize):
-                        pt1 = (x, y)
-                        pt2 = (min(x2, x + mosaicsize - 1), min(y2, y + mosaicsize - 1))
-                        color = (int(output[y, x][0]), int(output[y, x][1]), int(output[y, x][2]))
-                        cv2.rectangle(output, pt1, pt2, color, -1)
-            elif replacewith == 'none':
-                pass
-            # ovcolor = (0, 0, 0)
-            # cv2.rectangle(output, (x1, y1), (x2, y2), ovcolor, -1)
-            # face = output[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-            # anonymize
-            # face = self.anonymize_face_pixelate(face)
-            # output[bbox[1]:bbox[3], bbox[0]:bbox[2]] = face
-            # cv2.rectangle(output, (bbox[0], bbox[1]), (bbox[0]+bbox[2], bbox[1]+bbox[3]), box_color, 2)
-
-            # conf = det[-1]
-            # cv2.putText(output, '{:.4f}'.format(conf), (bbox[0], bbox[1]+12), cv2.FONT_HERSHEY_DUPLEX, 0.5, text_color)
-
-            # landmarks = det[4:14].astype(np.int32).reshape((5, 2))
-            # for idx, landmark in enumerate(landmarks):
-            #     cv2.circle(output, landmark, 2, landmark_color[idx], 2)
-
+            output = draw_detections(output, x1, y1, x2, y2, replacewith, mask_scale, ellipse, mosaicsize)
         return output
 
     def scale_bb(self, x1, y1, x2, y2, mask_scale=1.0):
