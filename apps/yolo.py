@@ -1,17 +1,17 @@
 from typing import List
 from ultralytics import YOLO
 import numpy as np
-# from torch import cuda
+from torch import cuda
 
 from apps.utils import resource_path, draw_detections
 #model_path = Path("./apps/yolov11n-face.pt")
 # model_path = Path("./apps/yolov11n-face_openvino_model" )
-import GPUtil as gpu
+# import GPUtil as gpu
 class YOLOModel:
     def __init__(self):
         # Check if GPU is available and has more than 0 GPUs
-        print(gpu.getAvailable())
-        if gpu.getAvailable() and gpu.getGPUs() > 0:
+        
+        if cuda.is_available() and cuda.device_count() > 0:
             self.device = "cuda"
             self.model_path = resource_path("res/models/yolov11n-face.pt")
         else:
