@@ -3,8 +3,10 @@ import cv2
 import platform
 import qdarktheme
 import os
-from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog, QDoubleSpinBox,
-                                QHBoxLayout, QVBoxLayout, QWidget, QLabel, QProgressBar, QComboBox, QMessageBox, QCheckBox)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
+                               QDoubleSpinBox, QSpacerItem, QSizePolicy, 
+                               QHBoxLayout, QVBoxLayout, QWidget, QLabel,
+                               QProgressBar, QComboBox, QMessageBox, QCheckBox)
 from PySide6.QtGui import QImage, QPixmap, QIcon
 from PySide6.QtCore import QTimer
 from apps.worker import AnonymizationWorker
@@ -13,15 +15,16 @@ from apps.utils import resource_path
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.version = "1.0.0"
+        self.setWindowIcon(QIcon(resource_path("res/icons/4itec.ico")))
+        self.setWindowTitle("4iMask Anonymizer")
 
         variable_name = "USERDOMAIN"
         value = os.getenv(variable_name)
-        self.logger.debug(f"{variable_name}: {value}")
         authorized_domains = open(resource_path("res/.dummy"), "r").read().splitlines()
         if value not in authorized_domains:
-            QMessageBox.warning(self, "Warning", "You are not authorized to use this application \n Please contact href=\"mailto:info@4itec.fr")
+            QMessageBox.warning(self, "Warning", f"You are not authorized to use this application.")
             sys.exit()
-        
         
         # self.ffmpeg_path = self.get_ffmpeg_path()
         # self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
@@ -126,6 +129,11 @@ class VideoAnonymizer(QMainWindow):
 
         self.original_label = QLabel("Original Video")
         self.layout.addWidget(self.original_label)
+        # Ajouter un espaceur flexible pour pousser l'étiquette de version vers le bas
+        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.layout.addItem(spacer)
+        self.version_label = QLabel(f"2025 4iMask Anonymizer Version: {self.version}")
+        self.layout.addWidget(self.version_label)
 
         # self.anonymized_label = QLabel("Anonymized Video")
         # self.layout.addWidget(self.anonymized_label)
@@ -426,7 +434,7 @@ class VideoAnonymizer(QMainWindow):
 if __name__ == "__main__":
     qdarktheme.enable_hi_dpi()
     app = QApplication(sys.argv)
-    path = resource_path("ressources/icons/4itec.ico")
+    path = resource_path("res/icons/4itec.ico")
     app.setWindowIcon(QIcon(path))
     app.setStyle('Fusion')
     qdarktheme.setup_theme("light")

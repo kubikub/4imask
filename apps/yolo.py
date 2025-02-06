@@ -1,7 +1,8 @@
 from typing import List
 from ultralytics import YOLO
 import numpy as np
-from torch import cuda
+from torch.cuda import (is_available as cuda_is_available,
+                        device_count as cuda_device_count)
 
 from apps.utils import resource_path, draw_detections
 #model_path = Path("./apps/yolov11n-face.pt")
@@ -11,7 +12,7 @@ class YOLOModel:
     def __init__(self):
         # Check if GPU is available and has more than 0 GPUs
         
-        if cuda.is_available() and cuda.device_count() > 0:
+        if cuda_is_available() and cuda_device_count() > 0:
             self.device = "cuda"
             self.model_path = resource_path("res/models/yolov11n-face.pt")
         else:

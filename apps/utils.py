@@ -63,3 +63,4 @@ def scale_bb(x0, y0, x1, y1, mask_scale=1.3):
     x0 -= w * s
     x1 += w * s
     return np.round([x0, y0, x1, y1]).astype(int)
+
