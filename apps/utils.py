@@ -1,6 +1,7 @@
 import os
 import sys
-import skimage.draw
+# import skimage.draw
+from skimage.draw import ellipse as skimage_ellipse
 import cv2
 import numpy as np
 # def resource_path(relative_path):
@@ -40,7 +41,7 @@ def draw_detections(frame, x1, y1, x2, y2,
                 if ellipse:
                     roibox = frame[y1:y2, x1:x2]
                     # Get y and x coordinate lists of the "bounding ellipse"
-                    ey, ex = skimage.draw.ellipse((y2 - y1) // 2, (x2 - x1) // 2, (y2 - y1) // 2, (x2 - x1) // 2)
+                    ey, ex = skimage_ellipse((y2 - y1) // 2, (x2 - x1) // 2, (y2 - y1) // 2, (x2 - x1) // 2)
                     roibox[ey, ex] = blurred_box[ey, ex]
                     frame[y1:y2, x1:x2] = roibox
                 else:
