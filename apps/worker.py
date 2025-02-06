@@ -73,7 +73,7 @@ class AnonymizationWorker(QThread):
             yolo_ = None
             centerface = None
             self.yunet = None
-
+        print(f'Anonymizing video with {self.model} model, mask size: {self.mask_size}, replace with: {self.replacewith}')
         # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
         frame_count = 0
