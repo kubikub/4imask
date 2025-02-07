@@ -47,3 +47,7 @@ of this license document, but changing it is not allowed.
 # ...existing license text...
 
 For more details, see <https://www.gnu.org/licenses/agpl-3.0.html>
+
+### Mise à jour du fichier LICENSE
+
+Étant donné que vous utilisez des bibliothèques sous licence AGPL, vous devez publier votre application sous la même licence AGPL pour être conforme aux exigences de cette licence.
