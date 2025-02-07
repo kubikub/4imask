@@ -26,7 +26,7 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 splash = Splash(
-    'res/icons/4itec.png',
+    'res/icons/splash.gif',
     binaries=a.binaries,
     datas=a.datas,
     text_pos=None,

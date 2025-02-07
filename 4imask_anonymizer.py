@@ -1,22 +1,6 @@
-# 4iMask Anonymizer
-# Copyright (C) 2025 [Votre Nom ou Nom de l'Organisation]
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 import sys
 import cv2
-
+import platform
 import qdarktheme
 import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
@@ -27,13 +11,10 @@ from PySide6.QtGui import QImage, QPixmap, QIcon
 from PySide6.QtCore import QTimer
 from apps.worker import AnonymizationWorker
 from apps.utils import resource_path
-if getattr(sys, 'frozen', False):
-    import pyi_splash
+
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
-        if getattr(sys, 'frozen', False):
-            pyi_splash.close()
         self.version = "1.0.0"
         self.setWindowIcon(QIcon(resource_path("res/icons/4itec.ico")))
         self.setWindowTitle("4iMask Anonymizer")
@@ -461,5 +442,4 @@ if __name__ == "__main__":
     qdarktheme.setup_theme("light")
     window = VideoAnonymizer()
     window.show()
-    app.exec_()
     sys.exit(app.exec())
