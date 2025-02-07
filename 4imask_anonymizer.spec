@@ -28,7 +28,13 @@ a = Analysis(
     noarchive=False,
 )
 
-pyi_splash = Splash('splash.png', custom_text="Loading...", full_screen=False)
+pyi_splash = Splash(
+    'splash.png',
+    binaries=a.binaries,
+    datas=a.datas,
+    custom_text="Loading...",
+    full_screen=False
+)
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
