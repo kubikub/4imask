@@ -1,8 +1,7 @@
-# Video Anonymizer
+# 4iMask Anonymizer
 
 ## Description
-
-Video Anonymizer est une application qui permet d'anonymiser les visages dans les vidéos en utilisant différentes techniques telles que le floutage, la mosaïque et le masquage. L'application est construite avec PySide6 pour l'interface utilisateur et utilise OpenCV pour le traitement vidéo.
+4iMask Anonymizer est une application pour anonymiser des vidéos en utilisant différentes techniques comme le floutage, le masquage et la mosaïque.
 
 ## Fonctionnalités
 
@@ -11,6 +10,7 @@ Video Anonymizer est une application qui permet d'anonymiser les visages dans le
 - Options d'anonymisation : Mosaïque, Flou, Masque
 - Pause, reprise et arrêt de l'anonymisation
 - Visualisation en direct de l'anonymisation
+- Changer de modèle de détection (YOLOv11, CenterFace, YUNET)
 
 ## Prérequis
 
@@ -28,39 +28,30 @@ with NVDIA GPU
 - onnxruntime-gpu
 
 ## Installation
-
-1. Clonez le dépôt :
-    ```bash
-    git clone https://github.com/4iTEC/4imask.git
-    cd 4imask
-    ```
-
-2. Installez les dépendances :
-    ```bash
-    pip install -r requirements.txt
-    ```
+Clonez le dépôt et installez les dépendances :
+```sh
+git clone https://github.com/votre-utilisateur/4imask.git
+cd 4imask
+pip install -r requirements.txt
+```
 
 ## Utilisation
+Pour lancer l'application, exécutez :
+```sh
+python 4imask_anonymizer.py
+```
 
-1. Lancez l'application :
-    ```bash
-    python anonimization.py
-    ```
-
-2. Utilisez l'interface pour :
-    - Sélectionner une vidéo
-    - Choisir le format de sortie
-    - Sélectionner une méthode d'anonymisation
-    - Démarrer, mettre en pause, reprendre ou arrêter l'anonymisation
-    - Visualiser l'anonymisation en direct
+## Compilation
+Assurez-vous d'avoir toutes les dépendances installées en utilisant `pip install -r requirements.txt`. Ensuite, vous pouvez exécuter l'application avec la commande ci-dessus.
 
 ## Contribuer
-
-Les contributions sont les bienvenues ! Veuillez soumettre une pull request ou ouvrir une issue pour discuter des changements que vous souhaitez apporter.
+Les contributions sont les bienvenues. Veuillez ouvrir une issue ou soumettre une pull request.
 
 ## Licence
+Ce projet est sous licence AGPL-3.0. Voir le fichier [LICENSE](./LICENSE) pour plus de détails.
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+## Contact
+Pour toute question, veuillez contacter [votre-email@example.com](mailto:votre-email@example.com).
 
 ## Sources
 

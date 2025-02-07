@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2023 4iTEC
+Copyright (c) 2025 [Votre Nom ou Nom de l'Organisation]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,31 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+La licence MIT est une licence permissive qui permet une large utilisation, y compris commerciale. Cependant, l'utilisation de bibliothèques sous licence AGPL (Affero General Public License) impose des restrictions plus strictes.
+
+### Compatibilité des licences
+
+1. **Licence AGPL** : La licence AGPL impose que si vous distribuez un logiciel qui utilise une bibliothèque AGPL, votre logiciel doit également être sous licence AGPL. Cela signifie que vous devez rendre le code source de votre application disponible sous les mêmes termes.
+
+2. **Licence MIT** : La licence MIT est plus permissive et permet une utilisation plus flexible, mais elle n'est pas compatible avec les exigences de la licence AGPL.
+
+### Conclusion
+
+Si vous utilisez des bibliothèques sous licence AGPL dans votre projet, vous ne pouvez pas simplement utiliser la licence MIT pour votre application. Vous devez respecter les termes de la licence AGPL et publier votre application sous la même licence.
+
+### Exemple de fichier LICENSE pour AGPL
+
+Créez un fichier `LICENSE` à la racine de votre projet avec le contenu suivant :
+
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.
+
+# ...existing license text...
+
+For more details, see <https://www.gnu.org/licenses/agpl-3.0.html>
