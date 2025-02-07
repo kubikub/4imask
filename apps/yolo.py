@@ -15,6 +15,7 @@ class YOLOModel:
         if cuda_is_available() and cuda_device_count() > 0:
             self.device = "cuda"
             self.model_path = resource_path("res/models/yolov11n-face.pt")
+            print("Using CUDA for YOLO model")
         else:
             self.device = None
             self.model_path = resource_path("res/models/yolov11n-face_openvino_model/" )

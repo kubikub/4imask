@@ -358,6 +358,8 @@ class VideoAnonymizer(QMainWindow):
             print(f'Model 1: {model}')
             print(f'Replacewith 1: {replacewith}')
             if hasattr(self, 'worker') and self.worker.isRunning():
+                print(self.worker.isRunning())
+
                 self.worker.stop()
                 self.worker.quit()
                 self.worker.wait()
