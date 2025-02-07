@@ -16,7 +16,7 @@
 
 import sys
 import cv2
-import platform
+from contextlib import suppress
 import qdarktheme
 import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
@@ -458,9 +458,9 @@ if __name__ == "__main__":
     qdarktheme.setup_theme("light")
     window = VideoAnonymizer()
     window.show()
-    try:
-        import pyi_splash
+    with suppress(ModuleNotFoundError):
+        import pyi_splash  # noqa
+
         pyi_splash.close()
-    except:
-        pass
+    app.exec_()
     sys.exit(app.exec())
