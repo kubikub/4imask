@@ -458,4 +458,9 @@ if __name__ == "__main__":
     qdarktheme.setup_theme("light")
     window = VideoAnonymizer()
     window.show()
+    try:
+        import pyi_splash
+        pyi_splash.close()
+    except:
+        pass
     sys.exit(app.exec())

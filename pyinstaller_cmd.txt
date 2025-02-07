@@ -3,3 +3,5 @@ pyinstaller 4imask_anonymizer.py --console --add-data "res:res" --icon="res/icon
 pyinstaller 4imask_anonymizer.py --noconsole --add-data "res:res" --icon="res/icons/4itec.ico" --hidden-import=ultralytics --collect-submodules=openvino --collect-binaries=openvino --collect-data=openvino
 
 pyinstaller 4imask_anonymizer.py --noconsole --add-data "res:res" --icon="res/icons/4itec.ico" --hidden-import=ultralytics --collect-submodules=openvino --collect-binaries=openvino --collect-data=openvino --hidden-import=skimage._shared.geometry
+
+pyinstaller 4imask_anonymizer.py --noconsole --add-data "res:res" --icon="res/icons/4itec.ico" --hidden-import=ultralytics --collect-submodules=openvino --collect-binaries=openvino --collect-data=openvino --hidden-import=skimage._shared.geometry --splash="res/icons/4itec.png"
