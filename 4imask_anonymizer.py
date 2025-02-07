@@ -32,6 +32,8 @@ if getattr(sys, 'frozen', False):
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
+        if getattr(sys, 'frozen', False):
+            pyi_splash.close()
         self.version = "1.0.0"
         self.setWindowIcon(QIcon(resource_path("res/icons/4itec.ico")))
         self.setWindowTitle("4iMask Anonymizer")
@@ -459,7 +461,5 @@ if __name__ == "__main__":
     qdarktheme.setup_theme("light")
     window = VideoAnonymizer()
     window.show()
-    if getattr(sys, 'frozen', False):
-        pyi_splash.close()
     app.exec_()
     sys.exit(app.exec())
