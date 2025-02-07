@@ -12,6 +12,13 @@ from PySide6.QtCore import QTimer
 from apps.worker import AnonymizationWorker
 from apps.utils import resource_path
 
+try:
+    import pyi_splash
+    pyi_splash.update_text("Loading...")
+    pyi_splash.close()
+except ImportError:
+    print("pyi_splash not found, continuing without splash screen.")
+
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()

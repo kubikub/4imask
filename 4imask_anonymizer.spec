@@ -1,4 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
+
+block_cipher = None
+
 from PyInstaller.utils.hooks import collect_data_files
 from PyInstaller.utils.hooks import collect_dynamic_libs
 from PyInstaller.utils.hooks import collect_submodules
@@ -10,35 +13,29 @@ datas += collect_data_files('openvino')
 binaries += collect_dynamic_libs('openvino')
 hiddenimports += collect_submodules('openvino')
 
-
 a = Analysis(
     ['4imask_anonymizer.py'],
-    pathex=[],
+    pathex=['/D:/OneDrive - 4itec/Documents/GitHub/4imask'],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
-    hooksconfig={},
     runtime_hooks=[],
     excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
     noarchive=False,
-    optimize=0,
-)
-pyz = PYZ(a.pure)
-splash = Splash(
-    'res/icons/splash.gif',
-    binaries=a.binaries,
-    datas=a.datas,
-    text_pos=None,
-    text_size=12,
-    minify_script=True,
-    always_on_top=False,
 )
 
+pyi_splash = Splash('splash.png', custom_text="Loading...", full_screen=False)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
 exe = EXE(
+    pyi_splash,
     pyz,
     a.scripts,
-    splash,
     [],
     exclude_binaries=True,
     name='4imask_anonymizer',
@@ -46,19 +43,17 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
     console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon=['res\\icons\\4itec.ico'],
+    icon='res/icons/4itec.ico',
 )
+
 coll = COLLECT(
     exe,
     a.binaries,
+    a.zipfiles,
     a.datas,
-    splash.binaries,
     strip=False,
     upx=True,
     upx_exclude=[],
