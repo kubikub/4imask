@@ -29,7 +29,7 @@ a = Analysis(
 )
 
 pyi_splash = Splash(
-    'splash.png',
+    'res/icons/splash.png',
     binaries=a.binaries,
     datas=a.datas,
     custom_text="Loading...",
