@@ -16,7 +16,7 @@
 
 import sys
 import cv2
-from contextlib import suppress
+
 import qdarktheme
 import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
@@ -27,7 +27,8 @@ from PySide6.QtGui import QImage, QPixmap, QIcon
 from PySide6.QtCore import QTimer
 from apps.worker import AnonymizationWorker
 from apps.utils import resource_path
-
+if getattr(sys, 'frozen', False):
+    import pyi_splash
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -458,9 +459,7 @@ if __name__ == "__main__":
     qdarktheme.setup_theme("light")
     window = VideoAnonymizer()
     window.show()
-    with suppress(ModuleNotFoundError):
-        import pyi_splash  # noqa
-
+    if getattr(sys, 'frozen', False):
         pyi_splash.close()
     app.exec_()
     sys.exit(app.exec())
