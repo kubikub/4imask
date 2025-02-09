@@ -92,7 +92,7 @@ class AnonymizationWorker(QThread):
                 if faces is not None:
                     frame = yolo_.mask_faces(faces, frame, 20, self.replacewith, self.mask_size)
             elif centerface is not None:
-                detections, _ = centerface(frame, threshold=0.4)
+                detections, _ = centerface(frame, threshold=0.25)
                 centerface.anonymize_frame(detections, frame, self.mask_size, replacewith=self.replacewith, ellipse=True, draw_scores=False, replaceimg=None, mosaicsize=15)
             elif self.yunet is not None:
                 frame = self.yunet_mechanism(frame, self.mask_size, replacewith=self.replacewith, ellipse=True, draw_scores=False, replaceimg=None, mosaicsize=15)
