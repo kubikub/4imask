@@ -23,7 +23,7 @@ class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.version = "1.0.0"
-        self.setWindowIcon(QIcon(resource_path("res/icons/4itec.ico")))
+        self.setWindowIcon(QIcon(resource_path("res/icons/4imask.png")))
         self.setWindowTitle("4iMask Anonymizer")
 
         variable_name = "USERDOMAIN"
@@ -443,7 +443,7 @@ class VideoAnonymizer(QMainWindow):
 if __name__ == "__main__":
     qdarktheme.enable_hi_dpi()
     app = QApplication(sys.argv)
-    path = resource_path("res/icons/4itec.ico")
+    path = resource_path("res/icons/4imask.png")
     app.setWindowIcon(QIcon(path))
     app.setStyle('Fusion')
     qdarktheme.setup_theme("light")
