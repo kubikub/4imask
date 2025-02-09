@@ -52,7 +52,7 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
-    icon='res/icons/4itec.ico',
+    icon='res/icons/4imask.png',
 )
 
 coll = COLLECT(
