@@ -40,7 +40,7 @@ class VideoAnonymizer(QMainWindow):
         # self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
         # self.ffmpeg_env.set_ffmpeg_env_path()
         # self.logger.info("FFmpeg path in environment: ", self.ffmpeg_env.is_ffmpeg_path_in_env())
-
+        self.mask_size = 1.6
         self.setWindowTitle("4iMask Anonymizer")
         self.setGeometry(100, 100, 800, 600)
 
@@ -82,7 +82,7 @@ class VideoAnonymizer(QMainWindow):
         self.spinbox.setMinimum(1.0)
         self.spinbox.setMaximum(5.0)
         self.spinbox.setSingleStep(0.1)
-        self.spinbox.setValue(1.3)
+        self.spinbox.setValue(self.mask_size)
         self.spinbox.valueChanged.connect(self.update_mask_size)
 
         self.anonymization_options_layout.addWidget(self.spinbox)
@@ -181,7 +181,7 @@ class VideoAnonymizer(QMainWindow):
             if hasattr(self, 'worker') and self.worker.isRunning():
                 self.worker.stop()
                 self.worker.wait()
-            self.worker = AnonymizationWorker(self.video_path, output_format, write_output=True)
+            self.worker = AnonymizationWorker(self.video_path, output_format, self.mask_size, write_output=True)
             self.logger.info(f'Model: {model}')
             self.logger.info(f'Replacewith: {replacewith}')
             self.worker.model = model
@@ -250,11 +250,13 @@ class VideoAnonymizer(QMainWindow):
             return 'none'
 
     def update_mask_size(self, value):
+        value = round(value,2)
         self.logger.info(value)
         if hasattr(self, 'worker'):
             self.worker.mask_size = value
         else:
-            return value
+            self.mask_size = round(value,2)
+
 
     def get_replacewith_option(self):
         if self.mosaic_checkbox.isChecked():
@@ -319,6 +321,7 @@ class VideoAnonymizer(QMainWindow):
 
     def anonymization_complete(self):
         self.notification_label.setText("Anonymization complete.")
+        self.logger.info(f'Anonymization complete for {self.video_path}')
         self.select_button.setEnabled(True)
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
@@ -372,11 +375,11 @@ class VideoAnonymizer(QMainWindow):
                 self.worker.quit()
                 self.worker.wait()
                 self.logger.info("Worker stopped.")
-            self.worker = AnonymizationWorker(self.video_path, output_format, write_output=False)
+            self.worker = AnonymizationWorker(self.video_path, output_format, self.mask_size, write_output=False)
             self.worker.model = model
             self.worker.replacewith = replacewith
             self.logger.info(f'Model  : {model}')
-            self.logger.info(f'Replacewith 3: {replacewith}')
+            self.logger.info(f'Replacewith : {replacewith}')
             self.worker.frame_emited.connect(self.update_frame)
             self.worker.start()
             self.timer.timeout.connect(self.update_frame)
@@ -463,8 +466,8 @@ def logs_settings():
     log_files.sort(key=lambda f: os.path.getctime(os.path.join(log_dir, f)))
 
     # Keep only the last 10 files
-    if len(log_files) > 10:
-        for log_file in log_files[:-10]:
+    if len(log_files) > 5:
+        for log_file in log_files[:-5]:
             os.remove(os.path.join(log_dir, log_file))
 
     # Configure the root logger to log messages to a file and the console

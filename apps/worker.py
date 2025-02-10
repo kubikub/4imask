@@ -16,7 +16,7 @@ class AnonymizationWorker(QThread):
     time_remaining_updated = Signal(int)
     anonymization_complete = Signal()
     frame_emited = Signal(np.ndarray)
-    def __init__(self, video_path, output_format, write_output=False):
+    def __init__(self, video_path, output_format, mask_size, write_output=False):
         super().__init__()
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self.video_path = video_path
@@ -25,7 +25,7 @@ class AnonymizationWorker(QThread):
         self._is_paused = False
         self._is_stopped = False
         self.replacewith = 'blur'  # Default value
-        self.mask_size = 1.3
+        self.mask_size = mask_size
         self.model = 'yolo'
         self.write_output = write_output
         self.logger.info("worker initialized")
