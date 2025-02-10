@@ -1,12 +1,12 @@
 import sys
 import cv2
-import platform
 import qdarktheme
 import os
-from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
-                                QDoubleSpinBox, QSpacerItem, QSizePolicy, 
-                                QHBoxLayout, QVBoxLayout, QWidget, QLabel,
-                                QProgressBar, QComboBox, QMessageBox, QCheckBox)
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QPushButton, QFileDialog,
+    QDoubleSpinBox, QSpacerItem, QSizePolicy,
+    QHBoxLayout, QVBoxLayout, QWidget, QLabel,
+    QProgressBar, QComboBox, QMessageBox, QCheckBox)
 from PySide6.QtGui import QImage, QPixmap, QIcon
 from PySide6.QtCore import QTimer
 from apps.worker import AnonymizationWorker
@@ -35,7 +35,7 @@ class VideoAnonymizer(QMainWindow):
         if value not in authorized_domains:
             QMessageBox.warning(self, "Warning", f"You are not authorized to use this application.")
             sys.exit()
-        
+
         # self.ffmpeg_path = self.get_ffmpeg_path()
         # self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
         # self.ffmpeg_env.set_ffmpeg_env_path()
