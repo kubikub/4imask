@@ -321,7 +321,7 @@ class VideoAnonymizer(QMainWindow):
 
     def anonymization_complete(self):
         self.notification_label.setText("Anonymization complete.")
-        self.logger.info(f'Anonymization complete for {self.video_path}')
+        self.logger.info(f'Anonymization complete for {self.video_path}, time remaining : {self.time_label.text()}')
         self.select_button.setEnabled(True)
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
