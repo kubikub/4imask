@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 import cv2
 from apps.utils import resource_path, draw_detections
-
+import logging
 # Find file relative to the location of this code files
 # f'{os.path.dirname(__file__)}/res/models/centerface.onnx'
 default_onnx_path = resource_path('res/models/centerface.onnx')
@@ -20,6 +20,10 @@ def ensure_rgb(img: np.ndarray) -> np.ndarray:
 
 class CenterFace:
     def __init__(self, onnx_path=None, in_shape=None, backend='auto', override_execution_provider=None):
+        self.logger = logging.getLogger(self.__class__.__name__).getChild(self.__class__.__name__)
+        if in_shape is None:
+            in_shape = (320, 320)
+        self.logger.info(f'Using input shape {in_shape}')
         self.in_shape = in_shape
         self.onnx_input_name = 'input.1'
         self.onnx_output_names = ['537', '538', '539', '540']
@@ -34,7 +38,7 @@ class CenterFace:
                 backend = 'onnxrt'
             except:
                 # TODO: Warn when using a --verbose flag
-                # print('Failed to import onnx or onnxruntime. Falling back to slower OpenCV backend.')
+                # self.logger.info('Failed to import onnx or onnxruntime. Falling back to slower OpenCV backend.')
                 backend = 'opencv'
         self.backend = backend
 
@@ -67,7 +71,7 @@ class CenterFace:
             self.sess = onnxruntime.InferenceSession(dyn_model.SerializeToString(), providers=ort_providers)
 
             preferred_provider = self.sess.get_providers()[0]
-            print(f'Running on {preferred_provider}.')
+            self.logger.info(f'Running on {preferred_provider}.')
 
     @staticmethod
     def dynamicize_shapes(static_model):

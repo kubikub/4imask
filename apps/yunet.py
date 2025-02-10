@@ -8,10 +8,11 @@ from typing import Tuple
 import numpy as np
 import cv2 as cv2
 from apps.utils import resource_path, draw_detections
-
+import logging
 class YuNet:
 
     def __init__(self, inputSize=[320, 320], confThreshold=0.6, nmsThreshold=0.3, topK=5000, backendId=0, targetId=0):
+        self.logger = logging.getLogger(self.__class__.__name__).getChild(self.__class__.__name__)
         self._modelPath = resource_path("res/models/face_detection_yunet_2023mar.onnx")
         self._inputSize = tuple(inputSize) # [w, h]
         self._confThreshold = confThreshold
@@ -57,12 +58,12 @@ class YuNet:
 
     
     def visualize(self, image, results, mask_scale=1.3, replacewith='blur', ellipse: bool = True,
-                  draw_scores: bool = False,
-                  ovcolor: Tuple[int] = (0, 0, 0),
-                  replaceimg=None,
-                  mosaicsize: int = 2, 
-                  box_color=(0, 255, 0), 
-                  text_color=(0, 0, 255), fps=None):
+                    draw_scores: bool = False,
+                    ovcolor: Tuple[int] = (0, 0, 0),
+                    replaceimg=None,
+                    mosaicsize: int = 2, 
+                    box_color=(0, 255, 0), 
+                    text_color=(0, 0, 255), fps=None):
         output = image.copy()
         landmark_color = [
             (255,   0,   0),  # right eye

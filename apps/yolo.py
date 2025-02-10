@@ -5,21 +5,20 @@ from torch.cuda import (is_available as cuda_is_available,
                         device_count as cuda_device_count)
 
 from apps.utils import resource_path, draw_detections
-#model_path = Path("./apps/yolov11n-face.pt")
-# model_path = Path("./apps/yolov11n-face_openvino_model" )
-# import GPUtil as gpu
+import logging
+
 class YOLOModel:
     def __init__(self):
         # Check if GPU is available and has more than 0 GPUs
-        
+        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         if cuda_is_available() and cuda_device_count() > 0:
             self.device = "cuda"
             self.model_path = resource_path("res/models/yolov11n-face.pt")
-            print("Using CUDA for YOLO model")
+            self.logger.info("Using CUDA for YOLO model")
         else:
             self.device = None
             self.model_path = resource_path("res/models/yolov11n-face_openvino_model/" )
-            print("Using openvino for YOLO model")
+            self.logger.info("Using openvino for YOLO model")
         
         self._model = YOLO(self.model_path, task="detect", verbose=False)
         pass
@@ -27,8 +26,8 @@ class YOLOModel:
     def detect_faces(self, image_path: str, conf: float, iou: float, max_width: int = None, max_height: int = None) -> List[tuple[int, ...]] | None:
         
         results = self._model.predict(image_path, conf=conf, iou=iou,
-                                      verbose=False, device=self.device,
-                                      half=True, agnostic_nms=True)
+                                    verbose=False, device=self.device,
+                                    half=True, agnostic_nms=True)
 
         has_faces = any(result.boxes for result in results)
 

@@ -4,13 +4,16 @@ import platform
 import qdarktheme
 import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QFileDialog,
-                               QDoubleSpinBox, QSpacerItem, QSizePolicy, 
-                               QHBoxLayout, QVBoxLayout, QWidget, QLabel,
-                               QProgressBar, QComboBox, QMessageBox, QCheckBox)
+                                QDoubleSpinBox, QSpacerItem, QSizePolicy, 
+                                QHBoxLayout, QVBoxLayout, QWidget, QLabel,
+                                QProgressBar, QComboBox, QMessageBox, QCheckBox)
 from PySide6.QtGui import QImage, QPixmap, QIcon
 from PySide6.QtCore import QTimer
 from apps.worker import AnonymizationWorker
 from apps.utils import resource_path
+import logging
+from datetime import datetime
+
 
 try:
     import pyi_splash
@@ -25,7 +28,7 @@ class VideoAnonymizer(QMainWindow):
         self.version = "1.0.0"
         self.setWindowIcon(QIcon(resource_path("res/icons/4imask.png")))
         self.setWindowTitle("4iMask Anonymizer")
-
+        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         variable_name = "USERDOMAIN"
         value = os.getenv(variable_name)
         authorized_domains = open(resource_path("res/.dummy"), "r").read().splitlines()
@@ -36,7 +39,7 @@ class VideoAnonymizer(QMainWindow):
         # self.ffmpeg_path = self.get_ffmpeg_path()
         # self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
         # self.ffmpeg_env.set_ffmpeg_env_path()
-        # print("FFmpeg path in environment: ", self.ffmpeg_env.is_ffmpeg_path_in_env())
+        # self.logger.info("FFmpeg path in environment: ", self.ffmpeg_env.is_ffmpeg_path_in_env())
 
         self.setWindowTitle("4iMask Anonymizer")
         self.setGeometry(100, 100, 800, 600)
@@ -168,7 +171,7 @@ class VideoAnonymizer(QMainWindow):
     def start_anonymization(self):
         # self.ffmpeg_path = self.get_ffmpeg_path()
         # self.set_ffmpeg_env_path()
-        # print(self.is_ffmpeg_path_in_env())
+        # self.logger.info(self.is_ffmpeg_path_in_env())
         # self.net = self.load_model()
         if self.video_path:
             self.pause_updates = True
@@ -179,8 +182,8 @@ class VideoAnonymizer(QMainWindow):
                 self.worker.stop()
                 self.worker.wait()
             self.worker = AnonymizationWorker(self.video_path, output_format, write_output=True)
-            print(f'Model: {model}')
-            print(f'Replacewith: {replacewith}')
+            self.logger.info(f'Model: {model}')
+            self.logger.info(f'Replacewith: {replacewith}')
             self.worker.model = model
             self.worker.replacewith = replacewith
             self.worker.progress_updated.connect(self.update_progress)
@@ -247,7 +250,7 @@ class VideoAnonymizer(QMainWindow):
             return 'none'
 
     def update_mask_size(self, value):
-        print(value)
+        self.logger.info(value)
         if hasattr(self, 'worker'):
             self.worker.mask_size = value
         else:
@@ -362,22 +365,18 @@ class VideoAnonymizer(QMainWindow):
             output_format = self.format_combo.currentText()
             replacewith = self.get_replacewith_option()
             model = self.get_model_option()
-            print(f'Model 1: {model}')
-            print(f'Replacewith 1: {replacewith}')
             if hasattr(self, 'worker') and self.worker.isRunning():
-                print(self.worker.isRunning())
+                self.logger.info(self.worker.isRunning())
 
                 self.worker.stop()
                 self.worker.quit()
                 self.worker.wait()
-                print("Worker stopped.")
+                self.logger.info("Worker stopped.")
             self.worker = AnonymizationWorker(self.video_path, output_format, write_output=False)
-            print(f'Model 2 : {model}')
-            print(f'Replacewith 2 : {replacewith}')
             self.worker.model = model
             self.worker.replacewith = replacewith
-            print(f'Model 3 : {model}')
-            print(f'Replacewith 3: {replacewith}')
+            self.logger.info(f'Model  : {model}')
+            self.logger.info(f'Replacewith 3: {replacewith}')
             self.worker.frame_emited.connect(self.update_frame)
             self.worker.start()
             self.timer.timeout.connect(self.update_frame)
@@ -429,7 +428,7 @@ class VideoAnonymizer(QMainWindow):
 #             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
 #         else:
 #             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-#         # print(f"Updated PATH: {os.environ['PATH']}")
+#         # self.logger.info(f"Updated PATH: {os.environ['PATH']}")
 
 #     def remove_ffmpeg_env_path(self):
 #         os.environ["PATH"] = os.pathsep.join(
@@ -439,9 +438,9 @@ class VideoAnonymizer(QMainWindow):
 #     def is_ffmpeg_path_in_env(self):
 #         return self.ffmpeg_path in os.environ["PATH"]
 
-
-if __name__ == "__main__":
+def mainloop():
     qdarktheme.enable_hi_dpi()
+    logs_settings()
     app = QApplication(sys.argv)
     path = resource_path("res/icons/4imask.png")
     app.setWindowIcon(QIcon(path))
@@ -450,3 +449,48 @@ if __name__ == "__main__":
     window = VideoAnonymizer()
     window.show()
     sys.exit(app.exec())
+
+def logs_settings():
+    try:
+        os.mkdir('logs')
+    except FileExistsError:
+        pass
+    log_dir = 'logs/'
+    # List all log files in the directory
+    log_files = [f for f in os.listdir(log_dir) if f.endswith('.log')]
+
+    # Sort the log files by creation time
+    log_files.sort(key=lambda f: os.path.getctime(os.path.join(log_dir, f)))
+
+    # Keep only the last 10 files
+    if len(log_files) > 10:
+        for log_file in log_files[:-10]:
+            os.remove(os.path.join(log_dir, log_file))
+
+    # Configure the root logger to log messages to a file and the console
+    # file_handler = logging.FileHandler('logs/' + 'app.log')
+    log_file_path = os.path.join(log_dir, datetime.now().strftime('%Y-%m-%d %H-%M-%S.log'))
+    file_handler = logging.FileHandler(log_file_path)
+    console_handler = logging.StreamHandler(sys.stdout)
+
+    logging.basicConfig(level=logging.INFO,
+                        format='Line: %(lineno)d - %(message)s - %(levelname)s - %(name)s',
+                        handlers=[file_handler, console_handler])
+    # Suppress all Matplotlib loggers
+    for logger_name in logging.Logger.manager.loggerDict:
+        if logger_name.startswith('matplotlib'):
+            logging.getLogger(logger_name).setLevel(logging.WARNING)
+    # Function to log uncaught exceptions
+
+    def log_uncaught_exceptions(exctype, value, tb):
+        logging.error("Uncaught exception", exc_info=(exctype, value, tb))
+        file_handler.flush()
+    # Set the exception hook
+    sys.excepthook = log_uncaught_exceptions
+    # Flush and close the log file
+    file_handler.flush()
+    file_handler.close()
+
+
+if __name__ == "__main__":
+    mainloop()

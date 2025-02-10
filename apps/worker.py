@@ -9,7 +9,7 @@ import platform
 from apps.yunet import YuNet
 from apps.centerface import CenterFace
 from apps.yolo import YOLOModel
-
+import logging
 
 class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
@@ -18,6 +18,7 @@ class AnonymizationWorker(QThread):
     frame_emited = Signal(np.ndarray)
     def __init__(self, video_path, output_format, write_output=False):
         super().__init__()
+        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self.video_path = video_path
         # self.net = net
         self.output_format = output_format
@@ -27,7 +28,7 @@ class AnonymizationWorker(QThread):
         self.mask_size = 1.3
         self.model = 'yolo'
         self.write_output = write_output
-        print("worker initialized")
+        self.logger.info("worker initialized")
 
     def run(self):
         cap = cv2.VideoCapture(self.video_path)
@@ -40,7 +41,7 @@ class AnonymizationWorker(QThread):
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_width, new_height = self.get_dimensions(self.output_format)
-        print(self.output_format)
+        self.logger.info(self.output_format)
         if self.write_output:
             if platform.system() == "Windows":
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -49,7 +50,7 @@ class AnonymizationWorker(QThread):
             # output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
             output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mp4"
 
-            print(output_name)
+            self.logger.info(output_name)
             out = cv2.VideoWriter(output_name, fourcc, fps, (new_width, new_height))
         # out = cv2.VideoWriter('/home/frank-kubler/anonymized_video2.avi', fourcc, fps)
             if not out.isOpened():
@@ -73,7 +74,7 @@ class AnonymizationWorker(QThread):
             yolo_ = None
             centerface = None
             self.yunet = None
-        print(f'Anonymizing video with {self.model} model, mask size: {self.mask_size}, replace with: {self.replacewith}')
+        self.logger.info(f'Anonymizing video with {self.model} model, mask size: {self.mask_size}, replace with: {self.replacewith}')
         # centerface.backend = 'onnxruntime-directml'
         start_time = time.time()
         frame_count = 0
@@ -100,7 +101,7 @@ class AnonymizationWorker(QThread):
             out.write(frame) if self.write_output else None
             frame_count += 1
             # Debugging information
-            # print(f"Frame {frame_count} written to video.")
+            # self.logger.info(f"Frame {frame_count} written to video.")
             self.frame_emited.emit(frame)
             # Update progress bar
             progress = (frame_count / total_frames) * 100
@@ -147,10 +148,10 @@ class AnonymizationWorker(QThread):
         (h, w) = frame.shape[:2] # Get the height and width of the frame
         self.yunet.setInputSize((w, h))
         detections = self.yunet.infer(frame)
-        # Print results
-        # print('{} faces detected.'.format(detections.shape[0]))
+        # self.logger.info results
+        # self.logger.info('{} faces detected.'.format(detections.shape[0]))
         # for idx, det in enumerate(detections):
-        #     print('{}: {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f}'.format(
+        #     self.logger.info('{}: {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f}'.format(
         #         idx, *det[:-1])
         #     )
         # if detections.shape[0] == 0:
