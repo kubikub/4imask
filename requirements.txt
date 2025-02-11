@@ -8,7 +8,7 @@ opencv-python
 onnx
 onnxruntime-directml
 onnxruntime-openvino
-#onnxruntime-gpu
+onnxruntime-gpu
 scikit-image
 imutils
 ultralytics
