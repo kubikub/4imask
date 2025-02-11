@@ -11,11 +11,13 @@ from apps.centerface import CenterFace
 from apps.yolo import YOLOModel
 import logging
 
+
 class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
     time_remaining_updated = Signal(int)
     anonymization_complete = Signal()
     frame_emited = Signal(np.ndarray)
+
     def __init__(self, video_path, output_format, mask_size, write_output=False):
         super().__init__()
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
@@ -87,6 +89,7 @@ class AnonymizationWorker(QThread):
             ret, frame = cap.read()
             if not ret:
                 break
+            frame = self.correct_orientation(frame, cap)
             frame = imutils.resize(frame, width=new_width)
             if yolo_ is not None:
                 faces = yolo_.detect_faces(frame, 0.25, 0.45)
@@ -120,6 +123,18 @@ class AnonymizationWorker(QThread):
         out.release() if self.write_output else None
         cv2.destroyAllWindows()
         self.anonymization_complete.emit()
+
+    def correct_orientation(self, frame, cap):
+        rotate_code = None
+        if hasattr(cv2, 'CAP_PROP_ORIENTATION_META'):
+            rotate_code = int(cap.get(cv2.CAP_PROP_ORIENTATION_META))
+        if rotate_code == 90:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+        elif rotate_code == 180:
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
+        elif rotate_code == 270:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        return frame
 
     def pause(self):
         self._is_paused = True

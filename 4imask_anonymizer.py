@@ -100,7 +100,7 @@ class VideoAnonymizer(QMainWindow):
         self.detection_models_layout.addWidget(self.centerface_checkbox)
         self.detection_models_layout.addWidget(self.yunet_checkbox)
         self.layout.addLayout(self.detection_models_layout)
-        
+
         self.buttons_layout = QHBoxLayout()
         self.start_button = QPushButton("Start Anonymization")
         self.start_button.clicked.connect(self.start_anonymization)
