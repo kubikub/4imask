@@ -6,7 +6,7 @@ opencv-python
 #opencv-python-headless
 #onnxruntime
 onnx
-onnxruntime-directml
+#onnxruntime-directml
 onnxruntime-openvino
 #onnxruntime-gpu
 scikit-image
