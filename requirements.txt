@@ -1,20 +1,13 @@
 pyside6
 pyqtdarktheme
-#pyqtdarktheme==2.1.0 --ignore-requires-python # pour python3.12
-#pyyaml
 opencv-python
-#opencv-python-headless
-#onnxruntime
+onnxruntime
 onnx
-onnxruntime-directml
-onnxruntime-openvino
-onnxruntime-gpu
+#onnxruntime-directml
+#onnxruntime-openvino
+#onnxruntime-gpu
 scikit-image
 imutils
 ultralytics
 openvino
 torch
-py-splash
-# torchvision
-# torchaudio
-#GPUtil
