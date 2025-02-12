@@ -50,6 +50,17 @@ Les contributions sont les bienvenues. Veuillez ouvrir une issue ou soumettre un
 ## Licence
 Ce projet est sous licence AGPL-3.0. Voir le fichier [LICENSE](./LICENSE) pour plus de détails.
 
+Les bibliothèques utilisées dans ce projet sont sous les licences suivantes :
+- OpenCV : Apache 2.0
+- PySide6 : LGPL
+- imutils : MIT
+- skimage : BSD
+- onnx : MIT
+- onnxruntime-directml : MIT
+- onnxruntime-openvino : MIT
+- onnxruntime-gpu : MIT
+- Ultralytics : AGPL-3.0
+
 ## Contact
 Pour toute question, veuillez contacter [votre-email@example.com](mailto:votre-email@example.com).
 

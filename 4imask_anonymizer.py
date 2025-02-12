@@ -7,8 +7,8 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox, QSpacerItem, QSizePolicy,
     QHBoxLayout, QVBoxLayout, QWidget, QLabel,
     QProgressBar, QComboBox, QMessageBox, QCheckBox)
-from PySide6.QtGui import QImage, QPixmap, QIcon
-from PySide6.QtCore import QTimer
+from PySide6.QtGui import QImage, QPixmap, QIcon, QDesktopServices
+from PySide6.QtCore import QTimer, QUrl, Qt
 from apps.worker import AnonymizationWorker
 from apps.utils import resource_path
 import logging
@@ -87,7 +87,7 @@ class VideoAnonymizer(QMainWindow):
 
         self.anonymization_options_layout.addWidget(self.spinbox)
         self.layout.addLayout(self.anonymization_options_layout)
-        
+
         self.detection_models_layout = QHBoxLayout()
         self.yolo_checkbox = QCheckBox("Yolov11n Face")
         self.yolo_checkbox.setChecked(True)
@@ -142,9 +142,19 @@ class VideoAnonymizer(QMainWindow):
         # Ajouter un espaceur flexible pour pousser l'étiquette de version vers le bas
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.layout.addItem(spacer)
-        self.version_label = QLabel(f"2025 4iMask Anonymizer Version: {self.version}")
-        self.layout.addWidget(self.version_label)
 
+        last_line = QHBoxLayout()
+
+        # Ajouter un lien hypertexte pour ouvrir le fichier LICENSE
+        self.license_link = QLabel('<a href="#">AGPL LICENSE</a>')
+        self.license_link.setOpenExternalLinks(False)
+        self.license_link.linkActivated.connect(self.open_license)
+
+        self.version_label = QLabel(f"2025 4iMask Anonymizer Version: {self.version}")
+        last_line.addWidget(self.version_label)
+        last_line.addWidget(self.license_link)
+        last_line.setAlignment(self.license_link, Qt.AlignRight)
+        self.layout.addLayout(last_line)
         # self.anonymized_label = QLabel("Anonymized Video")
         # self.layout.addWidget(self.anonymized_label)
 
@@ -414,6 +424,10 @@ class VideoAnonymizer(QMainWindow):
 
         # self.resume_button.setEnabled(True)
         # self.pause_button.setEnabled(True)
+
+    def open_license(self):
+        license_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LICENSE")
+        QDesktopServices.openUrl(QUrl.fromLocalFile(license_path))
 
     def closeEvent(self, event):
         if hasattr(self, 'worker') and self.worker.isRunning():
