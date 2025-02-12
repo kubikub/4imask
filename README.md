@@ -1,71 +1,70 @@
 # 4iMask Anonymizer
-
 ## Description
-4iMask Anonymizer est une application pour anonymiser des vidéos en utilisant différentes techniques comme le floutage, le masquage et la mosaïque.
+4iMask Anonymizer is an application for anonymizing videos using various techniques such as blurring, masking, and mosaicking.
 
-## Fonctionnalités
+## Features
+- Select video to anonymize
+- Choose output format (360p, 480p, 720p, 1080p)
+- Anonymization options: Mosaic, Blur, Mask
+- Pause, resume, and stop anonymization
+- Live view of anonymization
+- Change detection model (YOLOv11, CenterFace, YUNET)
 
-- Sélection de vidéo à anonymiser
-- Choix du format de sortie (360p, 480p, 720p, 1080p)
-- Options d'anonymisation : Mosaïque, Flou, Masque
-- Pause, reprise et arrêt de l'anonymisation
-- Visualisation en direct de l'anonymisation
-- Changer de modèle de détection (YOLOv11, CenterFace, YUNET)
-
-## Prérequis
-
+## Prerequisites
 - Python 3.x
 - PySide6
 - OpenCV
 - imutils
 - skimage
 - onnx
-for Windosw: 
+
+For Windows:
 - onnxruntime-directml
-for linux
+
+For Linux:
 - onnxruntime-openvino
-with NVDIA GPU
+
+With NVIDIA GPU:
 - onnxruntime-gpu
 
 ## Installation
-Clonez le dépôt et installez les dépendances :
+Clone the repository and install the dependencies:
 ```sh
-git clone https://github.com/votre-utilisateur/4imask.git
+git clone https://github.com/your-username/4imask.git
 cd 4imask
 pip install -r requirements.txt
 ```
 
-## Utilisation
-Pour lancer l'application, exécutez :
+## Usage
+To launch the application, run:
 ```sh
 python 4imask_anonymizer.py
 ```
 
 ## Compilation
-Assurez-vous d'avoir toutes les dépendances installées en utilisant `pip install -r requirements.txt`. Ensuite, vous pouvez exécuter l'application avec la commande ci-dessus.
+Ensure all dependencies are installed using `pip install -r requirements.txt`. Then, you can run the application with the command above.
 
-## Contribuer
-Les contributions sont les bienvenues. Veuillez ouvrir une issue ou soumettre une pull request.
+## Contribute
+Contributions are welcome. Please open an issue or submit a pull request.
 
-## Licence
-Ce projet est sous licence AGPL-3.0. Voir le fichier [LICENSE](./LICENSE) pour plus de détails.
+## License
+This project is licensed under AGPL-3.0. See the [LICENSE](./LICENSE) file for details.
 
-Les bibliothèques utilisées dans ce projet sont sous les licences suivantes :
-- OpenCV : Apache 2.0
-- PySide6 : LGPL
-- imutils : MIT
-- skimage : BSD
-- onnx : MIT
-- onnxruntime-directml : MIT
-- onnxruntime-openvino : MIT
-- onnxruntime-gpu : MIT
-- Ultralytics : AGPL-3.0
+The libraries used in this project are under the following licenses:
+- OpenCV: Apache 2.0
+- PySide6: LGPL
+- imutils: MIT
+- skimage: BSD
+- onnx: MIT
+- onnxruntime-directml: MIT
+- onnxruntime-openvino: MIT
+- onnxruntime-gpu: MIT
+- Ultralytics: AGPL-3.0
 
 ## Contact
-Pour toute question, veuillez contacter [votre-email@example.com](mailto:votre-email@example.com).
+For any questions, please contact via github issues.
 
 ## Sources
-
 - [OpenCV Zoo - Face Detection Yunet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)
 - [ORB-HD - Deface](https://github.com/ORB-HD/deface)
 - [Akanametov - YOLO Face](https://github.com/akanametov/yolo-face)
