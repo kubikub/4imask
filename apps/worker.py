@@ -40,8 +40,8 @@ class AnonymizationWorker(QThread):
 
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_width, new_height = self.get_dimensions(self.output_format)
         self.logger.info(self.output_format)
         if self.write_output:
