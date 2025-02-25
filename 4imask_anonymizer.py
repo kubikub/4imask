@@ -25,7 +25,7 @@ except ImportError:
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.version = "1.0.0"
+        self.version = "1.0.1"
         self.setWindowIcon(QIcon(resource_path("res/icons/4imask.png")))
         self.setWindowTitle("4iMask Anonymizer")
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
@@ -343,7 +343,7 @@ class VideoAnonymizer(QMainWindow):
         self.play_button.setText("Play Preview")
         self.is_playing = False
 
-    def update_frame(self, frame=None):
+    def update_frame(self, frame=None, rotate_code=None):
         if not self.pause_updates and frame is not None:
         #     if not hasattr(self, 'paused_frame_displayed') or not self.paused_frame_displayed:
         #         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -361,7 +361,10 @@ class VideoAnonymizer(QMainWindow):
             h, w, ch = rgb_image.shape
             bytes_per_line = ch * w
             convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-            p = convert_to_Qt_format.scaled(720, 480)
+            if rotate_code is None or rotate_code == 0 or rotate_code == 180:
+                p = convert_to_Qt_format.scaled(720, 480)
+            else:
+                p = convert_to_Qt_format.scaled(320, 480)
             self.original_label.setPixmap(QPixmap.fromImage(p))
 
     def toggle_play_pause(self):
@@ -412,7 +415,7 @@ class VideoAnonymizer(QMainWindow):
         self.worker.stop()
         self.worker.quit()
         self.worker.wait()
-        
+
         self.pause_updates = True
         self.play_button.setText("Play Preview")
         self.is_playing = False
@@ -455,6 +458,7 @@ class VideoAnonymizer(QMainWindow):
 #     def is_ffmpeg_path_in_env(self):
 #         return self.ffmpeg_path in os.environ["PATH"]
 
+
 def mainloop():
     qdarktheme.enable_hi_dpi()
     logs_settings()
@@ -466,6 +470,7 @@ def mainloop():
     window = VideoAnonymizer()
     window.show()
     sys.exit(app.exec())
+
 
 def logs_settings():
     try:
@@ -490,7 +495,7 @@ def logs_settings():
     file_handler = logging.FileHandler(log_file_path)
     console_handler = logging.StreamHandler(sys.stdout)
 
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
                         format='Line: %(lineno)d - %(message)s - %(levelname)s - %(name)s',
                         handlers=[file_handler, console_handler])
     # Suppress all Matplotlib loggers

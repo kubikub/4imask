@@ -16,7 +16,7 @@ class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
     time_remaining_updated = Signal(int)
     anonymization_complete = Signal()
-    frame_emited = Signal(np.ndarray)
+    frame_emited = Signal(np.ndarray, int)
 
     def __init__(self, video_path, output_format, mask_size, write_output=False):
         super().__init__()
@@ -33,17 +33,22 @@ class AnonymizationWorker(QThread):
         self.logger.info("worker initialized")
 
     def run(self):
-        cap = cv2.VideoCapture(self.video_path)
+        cap = cv2.VideoCapture(self.video_path, cv2.CAP_FFMPEG, (cv2.CAP_PROP_HW_ACCELERATION, cv2.VIDEO_ACCELERATION_ANY))
         if not cap.isOpened():
             QMessageBox.critical(self, "Error", "Failed to open video file.")
             return
 
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS)
+
         # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         new_width, new_height = self.get_dimensions(self.output_format)
         self.logger.info(self.output_format)
+        rotate_code = cap.get(cv2.CAP_PROP_ORIENTATION_META)
+        if rotate_code == 90 or rotate_code == 270:
+            new_width, new_height = new_height, new_width
+        self.logger.info(f"new_width: {new_width}, new_height: {new_height}")
         if self.write_output:
             if platform.system() == "Windows":
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -89,7 +94,7 @@ class AnonymizationWorker(QThread):
             ret, frame = cap.read()
             if not ret:
                 break
-            frame = self.correct_orientation(frame, cap)
+            frame, _ = self.correct_orientation(frame, cap)
             frame = imutils.resize(frame, width=new_width)
             if yolo_ is not None:
                 faces = yolo_.detect_faces(frame, 0.25, 0.45)
@@ -105,7 +110,7 @@ class AnonymizationWorker(QThread):
             frame_count += 1
             # Debugging information
             # self.logger.info(f"Frame {frame_count} written to video.")
-            self.frame_emited.emit(frame)
+            self.frame_emited.emit(frame, rotate_code)
             # Update progress bar
             progress = (frame_count / total_frames) * 100
             self.progress_updated.emit(int(progress))
@@ -128,13 +133,14 @@ class AnonymizationWorker(QThread):
         rotate_code = None
         if hasattr(cv2, 'CAP_PROP_ORIENTATION_META'):
             rotate_code = int(cap.get(cv2.CAP_PROP_ORIENTATION_META))
+            # self.logger.info(f"Orientation: {rotate_code}")
         if rotate_code == 90:
             frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         elif rotate_code == 180:
             frame = cv2.rotate(frame, cv2.ROTATE_180)
         elif rotate_code == 270:
             frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        return frame
+        return frame, rotate_code
 
     def pause(self):
         self._is_paused = True
@@ -148,7 +154,7 @@ class AnonymizationWorker(QThread):
     def get_dimensions(self, format):
 
         if format == "480p":
-            return 854, 480
+            return 720, 480
         elif format == "720p":
             return 1280, 720
         elif format == "1080p":
