@@ -316,7 +316,7 @@ class VideoAnonymizer(QMainWindow):
             self.is_playing = False
 
     def get_ffmpeg_path(self):
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "res/ffmpeg", "bin")
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
@@ -439,6 +439,7 @@ class VideoAnonymizer(QMainWindow):
             self.worker.wait()
         # self.ffmpeg_env.remove_ffmpeg_env_path()
         event.accept()
+
 
 class FFmpegPathManager:
     def __init__(self, ffmpeg_path):
