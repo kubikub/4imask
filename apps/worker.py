@@ -12,6 +12,7 @@ from apps.yolo import YOLOModel
 import logging
 
 
+
 class AnonymizationWorker(QThread):
     progress_updated = Signal(int)
     time_remaining_updated = Signal(int)
@@ -51,11 +52,11 @@ class AnonymizationWorker(QThread):
         self.logger.info(f"new_width: {new_width}, new_height: {new_height}")
         if self.write_output:
             if platform.system() == "Windows":
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                fourcc = cv2.VideoWriter_fourcc(*'h264')
             else:
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             # output_name = os.path.basename(self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mkv"
-            output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".mp4"
+            output_name = (self.video_path).split(".")[0] + "_anonymized_" + self.output_format.lower() + ".avi"
 
             self.logger.info(output_name)
             out = cv2.VideoWriter(output_name, fourcc, fps, (new_width, new_height))

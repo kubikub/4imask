@@ -13,7 +13,7 @@ from apps.worker import AnonymizationWorker
 from apps.utils import resource_path
 import logging
 from datetime import datetime
-
+import platform
 
 try:
     import pyi_splash
@@ -22,10 +22,11 @@ try:
 except ImportError:
     print("pyi_splash not found, continuing without splash screen.")
 
+
 class VideoAnonymizer(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.version = "1.0.1"
+        self.version = "1.0.2"
         self.setWindowIcon(QIcon(resource_path("res/icons/4imask.png")))
         self.setWindowTitle("4iMask Anonymizer")
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
@@ -33,13 +34,13 @@ class VideoAnonymizer(QMainWindow):
         value = os.getenv(variable_name)
         authorized_domains = open(resource_path("res/.dummy"), "r").read().splitlines()
         if value not in authorized_domains:
-            QMessageBox.warning(self, "Warning", f"You are not authorized to use this application.")
+            QMessageBox.warning(self, "Warning", "You are not authorized to use this application.")
             sys.exit()
 
-        # self.ffmpeg_path = self.get_ffmpeg_path()
-        # self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
-        # self.ffmpeg_env.set_ffmpeg_env_path()
-        # self.logger.info("FFmpeg path in environment: ", self.ffmpeg_env.is_ffmpeg_path_in_env())
+        self.ffmpeg_path = self.get_ffmpeg_path()
+        self.ffmpeg_env = FFmpegPathManager(self.ffmpeg_path)
+        self.ffmpeg_env.set_ffmpeg_env_path()
+        self.logger.info(f"FFmpeg path in environment: {self.ffmpeg_env.is_ffmpeg_path_in_env()}")
         self.mask_size = 1.6
         self.setWindowTitle("4iMask Anonymizer")
         self.setGeometry(100, 100, 800, 600)
@@ -311,11 +312,11 @@ class VideoAnonymizer(QMainWindow):
             self.yunet_checkbox.setEnabled(True)
             self.play_button.setEnabled(True)  # Enable play button after stopping
             self.play_button.setText("Play Preview")
-            
+
             self.is_playing = False
 
-    # def get_ffmpeg_path(self):
-    #     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
+    def get_ffmpeg_path(self):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg", "bin")
 
     def update_progress(self, progress):
         self.progress_bar.setValue(progress)
@@ -439,24 +440,24 @@ class VideoAnonymizer(QMainWindow):
         # self.ffmpeg_env.remove_ffmpeg_env_path()
         event.accept()
 
-# class FFmpegPathManager:
-#     def __init__(self, ffmpeg_path):
-#         self.ffmpeg_path = ffmpeg_path
+class FFmpegPathManager:
+    def __init__(self, ffmpeg_path):
+        self.ffmpeg_path = ffmpeg_path
 
-#     def set_ffmpeg_env_path(self):
-#         if platform.system() == "Windows":
-#             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-#         else:
-#             os.environ["PATH"] += os.pathsep + self.ffmpeg_path
-#         # self.logger.info(f"Updated PATH: {os.environ['PATH']}")
+    def set_ffmpeg_env_path(self):
+        if platform.system() == "Windows":
+            os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+        else:
+            os.environ["PATH"] += os.pathsep + self.ffmpeg_path
+        # self.logger.info(f"Updated PATH: {os.environ['PATH']}")
 
-#     def remove_ffmpeg_env_path(self):
-#         os.environ["PATH"] = os.pathsep.join(
-#             [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
-#         )
+    def remove_ffmpeg_env_path(self):
+        os.environ["PATH"] = os.pathsep.join(
+            [p for p in os.environ["PATH"].split(os.pathsep) if p != self.ffmpeg_path]
+        )
 
-#     def is_ffmpeg_path_in_env(self):
-#         return self.ffmpeg_path in os.environ["PATH"]
+    def is_ffmpeg_path_in_env(self):
+        return self.ffmpeg_path in os.environ["PATH"]
 
 
 def mainloop():
